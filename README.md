@@ -16,3 +16,6 @@ Any changes that were made from PTA v3 to v4 are not present in OpenShade and wi
 
 Yes. The file format is the same, for now. But bear in mind that not all tweaks may work correctly since OpenShade is based on an older version of PTA.
 
+- The program does not launch
+
+Make sure you have Microsoft .Net Framework 4.5.2 or later installed on your machine.
