@@ -1309,35 +1309,35 @@ const float3 RGB_Gain = float3({post.parameters[2].value});
 
                         case "Technicolor":
                             HDRText = HDRText.AddBefore(ref success, "// Applies exposure and tone mapping to the input, and combines it with the",
-$@"#define cyanfilter float3(0.0, 1.30, 1.0)
-#define magentafilter float3(1.0, 0.0, 1.05)
-#define yellowfilter float3(1.6, 1.6, 0.05)
-#define redorangefilter float2(1.05, 0.620)
-#define greenfilter float2(0.30, 1.0)
-#define magentafilter2 magentafilter.rb
-float4 TechnicolorMain(PsQuad vert, float4 color) : SV_Target
+$@"float4 TechnicolorMain(PsQuad vert, float4 color) : SV_Target
 {{
-    const float TechniAmount = {post.parameters[0].value};
-    const float TechniPower = {post.parameters[1].value};
-    const float redNegativeAmount = {post.parameters[2].value};
-    const float greenNegativeAmount = {post.parameters[3].value};
-    const float blueNegativeAmount = {post.parameters[4].value};
-    uint2 uTDim, uDDim;
-    srcTex.GetDimensions(uTDim.x, uTDim.y);
-    int3 iTexCoord = int3(uTDim.x * vert.texcoord.x, uTDim.y * vert.texcoord.y, 0);
+    const float3 ColorStrength = float3({post.parameters[0].value});
+    const float Brightness = {post.parameters[1].value};
+    const float Saturation = {post.parameters[2].value};
+    const float Strength = {post.parameters[3].value};
+
     float4 colorInput = color;
-    float3 tcol = colorInput.rgb;
-    float2 rednegative_mul = tcol.rg * (1.0 / (redNegativeAmount * TechniPower));
-    float2 greennegative_mul = tcol.rg * (1.0 / (greenNegativeAmount * TechniPower));
-    float2 bluenegative_mul = tcol.rb * (1.0 / (blueNegativeAmount * TechniPower));
-    float rednegative = dot(redorangefilter, rednegative_mul);
-    float greennegative = dot(greenfilter, greennegative_mul);
-    float bluenegative = dot(magentafilter2, bluenegative_mul);
-    float3 redoutput = rednegative.rrr + cyanfilter;
-    float3 greenoutput = greennegative.rrr + magentafilter;
-    float3 blueoutput = bluenegative.rrr + yellowfilter;
-    float3 result = redoutput * greenoutput * blueoutput;
-    colorInput.rgb = lerp(tcol, result, TechniAmount);
+    float3 tcol = saturate(colorInput.rgb);
+	
+	float3 temp = 1.0 - tcol;
+	float3 target = temp.grg;
+	float3 target2 = temp.bbr;
+	float3 temp2 = tcol * target;
+	temp2 *= target2;
+
+	temp = temp2 * ColorStrength;
+	temp2 *= Brightness;
+
+	target = temp.grg;
+	target2 = temp.bbr;
+
+	temp = tcol - target;
+	temp += temp2;
+	temp2 = temp - target2;
+
+	tcol = lerp(tcol, temp2, Strength);
+	colorInput.rgb = lerp(dot(tcol, 0.333), tcol, Saturation);
+
     return colorInput;
 }}
 ");
@@ -1381,32 +1381,32 @@ const float3x3 XYZ = float3x3
 0.257968894274758,0.676195259144706,0.0658358459823868,
 0.0234517888692628,0.1126992737203,0.866839673124201);
 
-const float DPX_ColorGamma = {post.parameters[1].value};
-const float DPXSaturation = {post.parameters[2].value};
+float3 RGB_Curve = float3({post.parameters[0].value});
+float3 RGB_C = float3({post.parameters[1].value});
 
-const float DPX_Blend = {post.parameters[4].value};
-	uint2 uTDim, uDDim;
-	srcTex.GetDimensions(uTDim.x,uTDim.y);
-	int3 iTexCoord = int3(uTDim.x * vert.texcoord.x, uTDim.y * vert.texcoord.y, 0);
-	float4 InputColor = Inp_color;
-	float DPXContrast = 0.1;
-	float DPXGamma = 1.0;
-	float3 RGB_Curve = float3({post.parameters[0].value});
-	float3 RGB_C = float3({post.parameters[3].value});
-	float3 B = InputColor.rgb;
-	B = pow(abs(B), 1.0/DPXGamma);
-	B = B * (1.0 - DPXContrast) + (0.5 * DPXContrast);
-    float3 Btemp = (1.0 / (1.0 + exp(RGB_Curve / 2.0)));
+const float Contrast = {post.parameters[1].value};
+const float Saturation = {post.parameters[2].value};
+const float Colorfulness = {post.parameters[3].value};
+const float Strength  = {post.parameters[4].value};
+
+    float4 InputColor = Inp_color;
+
+    float3 B = InputColor.rgb;
+	B = B * (1.0 - Contrast) + (0.5 * Contrast);
+	float3 Btemp = (1.0 / (1.0 + exp(RGB_Curve / 2.0)));
 	B = ((1.0 / (1.0 + exp(-RGB_Curve * (B - RGB_C)))) / (-2.0 * Btemp + 1.0)) + (-Btemp / (-2.0 * Btemp + 1.0));
+
 	float value = max(max(B.r, B.g), B.b);
 	float3 color = B / value;
-	color = pow(abs(color), 1.0/DPX_ColorGamma);
+	color = pow(abs(color), 1.0 / Colorfulness);
+
 	float3 c0 = color * value;
 	c0 = mul(XYZ, c0);
 	float luma = dot(c0, float3(0.30, 0.59, 0.11));
-    c0 = (1.0 - DPXSaturation) * luma + DPXSaturation * c0;
+	c0 = (1.0 - Saturation) * luma + Saturation * c0;
 	c0 = mul(RGB, c0);
-	InputColor.rgb = lerp(InputColor.rgb, c0, DPX_Blend);
+
+    InputColor.rgb = lerp(InputColor.rgb,, c0, Strength);
 	return InputColor;
 }}"
 );

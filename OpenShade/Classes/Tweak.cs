@@ -376,12 +376,11 @@ namespace OpenShade.Classes
             postProcesses.Add("POSTPROCESS_SHADER LiftGammaGain", newPost);
 
             newPost = new PostProcess("Technicolor", false, new List<Parameter>() { }, "Technicolor attempts to recreate a pseudo-Technicolor effect by modifying the colors of the image enough to emulate the three-strip film process used by movie studios to produce color movies during the 1930s through 1950s.");
-            newPost.parameters.Add(new Parameter("TechniAmount", "Techni Amount", 0.4, 0.4, 0, 1, UIType.Text, "Higher = more desaturated, color lessens, image colors appear faded\r\nLower = more color, color increases"));
-            newPost.parameters.Add(new Parameter("TechniPower", "Techni Power", 4, 4, 0, 8, UIType.Text, "Higher = Closer to original white levels. 8 = Original whites.\r\nLower = More whites, brighter image"));
-            newPost.parameters.Add(new Parameter("redNegativeAmount", "redNegativeAmount", 0.88, 0.88, 0, 1, UIType.Text, "Reducing this value adds more of Red"));
-            newPost.parameters.Add(new Parameter("greenNegativeAmount", "Green Negative Amount", 0.88, 0.88, 0, 1, UIType.Text, "Reducing this value adds more of Green"));
-            newPost.parameters.Add(new Parameter("blueNegativeAmount", "Blue Negative Amount", 0.88, 0.88, 0, 1, UIType.Text, "Reducing this value adds more of Blue"));
-            postProcesses.Add("POSTPROCESS_SHADER Technicolor", newPost);
+            newPost.parameters.Add(new Parameter("ColorStrengthR,ColorStrengthG,ColorStrengthB", "Color Strength", new RGB(0.2, 0.2, 0.2), new RGB(0.2, 0.2, 0.2), 0, 0, UIType.RGB, "Higher means darker and more intense colors."));
+            newPost.parameters.Add(new Parameter("Brightness", "Brightness", 1, 1, 0.5, 1.5, UIType.Text, "Higher means brighter image."));
+            newPost.parameters.Add(new Parameter("Saturation", "Saturation", 1, 1, 0, 1.5, UIType.Text, "Additional saturation control since this effect tends to oversaturate the image."));
+            newPost.parameters.Add(new Parameter("Strength", "Strength", 1, 1, 0, 1, UIType.Text, ""));
+            postProcesses.Add("POSTPROCESS_SHADER Technicolor2", newPost);
 
             newPost = new PostProcess("Vibrance", false, new List<Parameter>() { }, "Vibrance saturates or desaturates the image by a specified color. Vibrance offers more flexibility over which color influences the image.\r\n\r\nVibrance does not remove all colors the way the monochrome effect produces a black and white image, but vibrance will make colors more colorful or less colorful depending upon the values used to adjust the effect.Faded colors can give the image a washed out film effect that other effects can refine.");
             newPost.parameters.Add(new Parameter("Vibrance", "Vibrance", 0.2, 0.2, -1, 1, UIType.Text, "Specifies how much to saturate (+) or desturate (-) the image."));
@@ -390,11 +389,12 @@ namespace OpenShade.Classes
 
             newPost = new PostProcess("Cineon DPX", false, new List<Parameter>() { }, "Cineon DPX setting allows limited post-production image effects that (somewhat) resemble the results obtained with the Cineon System released by Kodak sometime around 1992-1993.");
             newPost.parameters.Add(new Parameter("Red,Green,Blue", "RGB", new RGB(8, 8, 8), new RGB(8, 8, 8), 1, 15, UIType.RGB, ""));
-            newPost.parameters.Add(new Parameter("ColorGamma", "Color Gamma", 2.5, 2.5, 0.1, 2.5, UIType.Text, "Adjusts how vibrant the colors should be."));
-            newPost.parameters.Add(new Parameter("DPXSaturation", "DPX Saturation", 3, 3, 0, 8, UIType.Text, "Saturates colors."));
-            newPost.parameters.Add(new Parameter("RedC,GreenC,BlueC", "RGB C", new RGB(0.36, 0.36, 0.34), new RGB(0.36, 0.36, 0.34), 0.2, 0.6, UIType.RGB, ""));
-            newPost.parameters.Add(new Parameter("Blend", "Blend", 0.2, 0.2, 0, 1, UIType.Text, "Blend is how strong the effect should be applied."));
-            postProcesses.Add("POSTPROCESS_SHADER DPX", newPost);
+            newPost.parameters.Add(new Parameter("RedC,GreenC,BlueC", "RGB C", new RGB(0.36, 0.36, 0.34), new RGB(0.36, 0.36, 0.34), 0.2, 0.5, UIType.RGB, ""));
+            newPost.parameters.Add(new Parameter("Contrast", "Contrast", 0.1, 0.1, 0, 1, UIType.Text, ""));
+            newPost.parameters.Add(new Parameter("Saturation", "Saturation", 3, 3, 0, 8, UIType.Text, ""));
+            newPost.parameters.Add(new Parameter("Colorfulness", "Colorfulness", 2.5, 2.5, 0.1, 2.5, UIType.Text, ""));
+            newPost.parameters.Add(new Parameter("Strength", "Strength", 0.2, 0.2, 0, 1, UIType.Text, ""));
+            postProcesses.Add("POSTPROCESS_SHADER DPX3", newPost);
 
             newPost = new PostProcess("Tonemap", false, new List<Parameter>() { }, "Tonemap is an effect that adjusts a variety of related image enhancements that include gamma, saturation, bleach, exposure, and color removal.\r\n\r\nTonemap is a useful “many-in-one” effect. Other effects might offer a greater degree of control over the image, but if only minor modifications are needed by using one effect, then Tonemap has its place.");
             newPost.parameters.Add(new Parameter("Gamma", "Gamma", 1, 1, 0, 2, UIType.Text, "Adjusts gamma. However, this gamma control is limited. If only minor gamma adjustment is needed, then this should be enough, but for more accurate gamma control over the image, set the Tonemap Gamma to 1.000 (neutral) and use the Lift Gamma Gain effect instead."));
