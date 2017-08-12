@@ -1141,8 +1141,8 @@ const float Sepia_SepiaPower = {post.parameters[2].value};
 	float3 blend2 = (grey * Sepia_GreyPower) + (color.rgb / (Sepia_GreyPower + 1));
 	color.rgb = lerp(blend2, sepia, Sepia_SepiaPower);
 	return color;
-}}"
-);
+}}
+");
                             HDRText = HDRText.AddBefore(ref success, "return EndColor;", "EndColor = SepiaMain(vert, EndColor);\r\n");
                             break;
 
@@ -1257,8 +1257,8 @@ float4 CurvesMain(PsQuad vert, float4 color) : SV_Target
     colorInput.rgb = x + chroma;
 #endif
   return colorInput;
-}}"
-);
+}}
+");
                             HDRText = HDRText.AddBefore(ref success, "return EndColor;", "EndColor = EndColor = CurvesMain(vert, EndColor);\r\n");
                             break;
 
@@ -1280,8 +1280,8 @@ else
 	float4 colorInput = color;
 	colorInput.rgb = colorInput.rgb * white_point_float - (black_point_float *  white_point_float);
 	return colorInput;
-}}"
-);
+}}
+");
                             HDRText = HDRText.AddBefore(ref success, "return EndColor;", "EndColor = LevelsMain(vert, EndColor);\r\n");
                             break;
 
@@ -1302,8 +1302,8 @@ const float3 RGB_Gain = float3({post.parameters[2].value});
 	color *= RGB_Gain;
 	colorInput.rgb = pow(color, 1.0 / RGB_Gamma);
 	return saturate(colorInput);
-}}"
-);
+}}
+");
                             HDRText = HDRText.AddBefore(ref success, "return EndColor;", "EndColor = LiftGammaGainMain(vert, EndColor);\r\n");
                             break;
 
@@ -1363,8 +1363,8 @@ const float3 Vibrance_RGB_balance = float3({post.parameters[1].value});
 	float color_saturation = max_color - min_color;
 	color.rgb = lerp(luma, color.rgb, (1.0 + (Vibrance_coeff * (1.0 - (sign(Vibrance_coeff) * color_saturation)))));
 	return color;
-}}"
-);
+}}
+");
                             HDRText = HDRText.AddBefore(ref success, "return EndColor;", "EndColor = VibranceMain(vert, EndColor);\r\n");
                             break;
 
@@ -1384,10 +1384,10 @@ const float3x3 XYZ = float3x3
 float3 RGB_Curve = float3({post.parameters[0].value});
 float3 RGB_C = float3({post.parameters[1].value});
 
-const float Contrast = {post.parameters[1].value};
-const float Saturation = {post.parameters[2].value};
-const float Colorfulness = {post.parameters[3].value};
-const float Strength  = {post.parameters[4].value};
+const float Contrast = {post.parameters[2].value};
+const float Saturation = {post.parameters[3].value};
+const float Colorfulness = {post.parameters[4].value};
+const float Strength  = {post.parameters[5].value};
 
     float4 InputColor = Inp_color;
 
@@ -1406,10 +1406,10 @@ const float Strength  = {post.parameters[4].value};
 	c0 = (1.0 - Saturation) * luma + Saturation * c0;
 	c0 = mul(RGB, c0);
 
-    InputColor.rgb = lerp(InputColor.rgb,, c0, Strength);
+    InputColor.rgb = lerp(InputColor.rgb, c0, Strength);
 	return InputColor;
-}}"
-);
+}}
+");
                             HDRText = HDRText.AddBefore(ref success, "return EndColor;", "EndColor = DPXMain(vert, EndColor);\r\n");
                             break;
 
@@ -1520,8 +1520,8 @@ float3 blur_ori;
 	sharp_luma = (Luma_sharp_clamp * 2.0) * sharp_luma - Luma_sharp_clamp;
 	color.rgb = ori + sharp_luma;
 	return color;
-}}"
-);
+}}
+");
                             HDRText = HDRText.AddBefore(ref success, "return EndColor;", "EndColor = LumaSharpenMain(vert, EndColor);\r\n");
                             break;
 
