@@ -2,7 +2,7 @@
 OpenShade is a tool to modify HLSL shaders in Prepar3D v4, based on the known PTA previously used in P3D v3.
 
 ## Getting started
-To use OpenShade, simply download the latest release [here](http://www.dropwizard.io/1.0.2/docs/).
+To use OpenShade, simply download the latest release [here](https://github.com/LB767/OpenShade/releases).
 
 The software is still in active development, so expect bugs and feel free to report them here.
 
