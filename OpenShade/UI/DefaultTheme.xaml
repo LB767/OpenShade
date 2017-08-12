@@ -1,0 +1,26 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:local="clr-namespace:OpenShade.UI">
+
+    <SolidColorBrush x:Key="WindowBackground" Color="#F0F0F0"/>
+    <SolidColorBrush x:Key="TextColor" Color="Black"/>
+    <SolidColorBrush x:Key="TextColor2" Color="Black"/>
+    <SolidColorBrush x:Key="BackgroundColor1" Color="#F0F0F0"/>
+    <SolidColorBrush x:Key="BackgroundColor2" Color="White"/>
+    <SolidColorBrush x:Key="BackgroundColor3" Color="#FFD9E4EE"/>
+    <SolidColorBrush x:Key="BorderColor1" Color="#313131"/>
+    <SolidColorBrush x:Key="BorderColor2" Color="#FF444444"/>
+    <SolidColorBrush x:Key="MouseOverColor1" Color="#FF0262D6"/>
+    <SolidColorBrush x:Key="PressedColor" Color="#FF2778A0"/>
+    <SolidColorBrush x:Key="MouseOverColor2" Color="#FF595959"/>
+    <SolidColorBrush x:Key="DisabledColor" Color="Gray"/>
+
+    <SolidColorBrush x:Key="TextBlue" Color="#FF0C50C7"/>
+    <SolidColorBrush x:Key="TextRed" Color="#FFCB1010"/>
+
+    
+    <Style x:Key="WindowStyle" TargetType="Window">
+        <Setter Property="Background" Value="{DynamicResource WindowBackground}" />
+    </Style>
+
+</ResourceDictionary>

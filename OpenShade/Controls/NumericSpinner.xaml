@@ -1,0 +1,70 @@
+﻿<UserControl x:Class="OpenShade.Controls.NumericSpinner"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:OpenShade.Controls"
+             mc:Ignorable="d" x:Name="root_numeric_spinner"
+             d:DesignHeight="32" d:DesignWidth="100">
+
+    <UserControl.Resources>
+        <ControlTemplate x:Key="updown_button_style" TargetType="Button">
+            <Border x:Name="br" BorderThickness="0" BorderBrush="{DynamicResource BorderColor1}" 
+                            Background="{DynamicResource BackgroundColor1}" CornerRadius="0">
+                <ContentPresenter x:Name="cp" TextElement.Foreground="{TemplateBinding Foreground}" 
+                                          HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" 
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+            </Border>
+            <ControlTemplate.Triggers>
+                <Trigger Property="IsMouseOver" Value="true">
+                    <Setter TargetName="br" Property="Background" Value="{DynamicResource MouseOverColor1}" />
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="false">
+                    <Setter TargetName="br" Property="Background" Value="Silver" />
+                </Trigger>
+            </ControlTemplate.Triggers>
+        </ControlTemplate>
+
+        <Style TargetType="Button">
+            <Setter Property="Template" Value="{StaticResource updown_button_style}" />
+        </Style>
+    </UserControl.Resources>
+    <Border>
+        <Border.OpacityMask>
+            <VisualBrush>
+                <VisualBrush.Visual>
+                    <Border Background="Black" SnapsToDevicePixels="True"
+                            CornerRadius="4"
+                            Width="{Binding ActualWidth, RelativeSource={RelativeSource FindAncestor, AncestorType=Border}}"
+                            Height="{Binding ActualHeight, RelativeSource={RelativeSource FindAncestor, AncestorType=Border}}" />
+                </VisualBrush.Visual>
+            </VisualBrush>
+        </Border.OpacityMask>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition />
+                <RowDefinition />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition />
+                <ColumnDefinition Width="22" />
+            </Grid.ColumnDefinitions>
+            <TextBox x:Name="tb_main" x:FieldModifier="private" FontWeight="Medium" FontSize="14" VerticalContentAlignment="Center" Padding="5,1" 
+                     Grid.Column="0" Grid.RowSpan="2" Text="0" PreviewTextInput="tb_main_PreviewTextInput" LostFocus="tb_main_LostFocus"/>
+            <Button x:Name="cmdUp" x:FieldModifier="private" Grid.Column="1" Grid.Row="0" Width="auto" Height="auto" Click="cmdUp_Click">
+                <Button.Content>
+                    <Path Width="9" Fill="{DynamicResource TextColor}" Stretch="Uniform" VerticalAlignment="Center" HorizontalAlignment="Center" Data="M 0 8 L 4 4 L 8 8 Z"/>
+                    <!--Data="M286.935 197.286L159.028 69.379c-3.613-3.617-7.895-5.424-12.847-5.424s-9.233 1.807-12.85 5.424L5.424 197.286   C1.807 200.9 0 205.184 0 210.132s1.807 9.233 5.424 12.847c3.621 3.617 7.902 5.428 12.85 5.428h255.813   c4.949 0 9.233-1.811 12.848-5.428c3.613-3.613 5.427-7.898 5.427-12.847S290.548 200.9 286.935 197.286z"/>-->
+                </Button.Content>
+            </Button>
+            <Button x:Name="cmdDown" x:FieldModifier="private" Grid.Column="1" Grid.Row="1" Width="auto" Height="auto" Click="cmdDown_Click">
+                <Button.Content>
+                    <Path Width="9" Fill="{DynamicResource TextColor}" Stretch="Uniform" VerticalAlignment="Center" HorizontalAlignment="Center" Data="M 0 0 L 4 4 L 8 0 Z"/>
+                    <!--Data="M286.935 69.377c-3.614-3.617-7.898-5.424-12.848-5.424H18.274c-4.952 0-9.233 1.807-12.85 5.424   C1.807 72.998 0 77.279 0 82.228c0 4.948 1.807 9.229 5.424 12.847l127.907 127.907c3.621 3.617 7.902 5.428 12.85 5.428   s9.233-1.811 12.847-5.428L286.935 95.074c3.613-3.617 5.427-7.898 5.427-12.847C292.362 77.279 290.548 72.998 286.935 69.377z"/>-->
+                </Button.Content>
+            </Button>
+            <Border BorderBrush="Gray" IsHitTestVisible="False" BorderThickness="0" CornerRadius="4" Grid.RowSpan="2" 
+                    Grid.ColumnSpan="2" Padding="0" Margin="0" />
+        </Grid>
+    </Border>
+</UserControl>

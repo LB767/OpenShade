@@ -1,0 +1,127 @@
+﻿<Application x:Class="OpenShade.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:OpenShade"
+             StartupUri="MainWindow.xaml">
+    <Application.Resources>
+
+        <ResourceDictionary>
+
+            <ResourceDictionary.MergedDictionaries>
+                <!--<ResourceDictionary Source="UI/Icons.xaml" />-->
+                <ResourceDictionary Source="UI/DefaultTheme.xaml" />
+                <!--<ResourceDictionary Source="UI/DarkTheme.xaml" />-->
+            </ResourceDictionary.MergedDictionaries>
+           
+            <Style TargetType="Label">
+                <Setter Property="Foreground" Value="{DynamicResource TextColor}" />
+                <Setter Property="Padding" Value="0"/>
+            </Style>
+
+
+            <DataTemplate x:Key="NewFileIcon">
+                <Path Stretch="Uniform" Fill="{Binding Foreground, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=Button}}" Data="M18.5 15c-2.483 0-4.5 2.015-4.5 4.5s2.017 4.5 4.5 4.5 4.5-2.015 4.5-4.5-2.017-4.5-4.5-4.5zm2.5 5h-2v2h-1v-2h-2v-1h2v-2h1v2h2v1zm-7.18 4h-12.82v-24h8.409c4.857 0 3.335 8 3.335 8 3.009-.745 8.256-.419 8.256 3v2.501c-.771-.322-1.614-.501-2.5-.501-3.584 0-6.5 2.916-6.5 6.5 0 1.747.696 3.331 1.82 4.5zm-.252-23.925c2.202 1.174 5.938 4.883 7.432 6.881-1.286-.9-4.044-1.657-6.091-1.179.222-1.468-.185-4.534-1.341-5.702z"/>
+            </DataTemplate>
+
+            <DataTemplate x:Key="OpenFileIcon">
+                <Path Stretch="Uniform" Fill="{Binding Foreground, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=Button}}" Data="M10.409 0c4.857 0 3.335 8 3.335 8 3.009-.745 8.256-.419 8.256 3v11.515l-4.801-4.801c.507-.782.801-1.714.801-2.714 0-2.76-2.24-5-5-5s-5 2.24-5 5 2.24 5 5 5c1.037 0 2-.316 2.799-.858l4.858 4.858h-18.657v-24h8.409zm2.591 12c1.656 0 3 1.344 3 3s-1.344 3-3 3-3-1.344-3-3 1.344-3 3-3zm1.568-11.925c2.201 1.174 5.938 4.884 7.432 6.882-1.286-.9-4.044-1.657-6.091-1.18.222-1.468-.186-4.534-1.341-5.702z"/>
+            </DataTemplate>
+
+            <DataTemplate x:Key="SaveFileIcon">
+                <Path Stretch="Uniform" Fill="{Binding Foreground, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=Button}}" Data="M15.003 3h2.997v5h-2.997v-5zm8.997 1v20h-24v-24h20l4 4zm-19 5h14v-7h-14v7zm16 4h-18v9h18v-9z"/>
+            </DataTemplate>
+
+            <DataTemplate x:Key="SaveFileAsIcon">
+                <Viewbox>
+                    <Canvas Width="24" Height="24">
+                        <Path Fill="{Binding Foreground, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=Button}}" Data="M15.003 3h2.997v5h-2.997v-5zm8.997 1v20h-24v-24h20l4 4zm-19 5h14v-7h-14v7zm16 4h-18v9h18v-9z"/>
+                        <Path Fill="{Binding Foreground, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=Button}}" StrokeThickness="2.5" Stroke="{DynamicResource WindowBackground}" StrokeMiterLimit="4" Data="M 15.259746 8.4973423 3.7553047 17.107508 1.7950772 22.615519 7.6306893 22.287059 19.13604 13.676213 Z M 5.3043622 19.160978 4.7253021 18.387332 14.86368 10.810292 l 0.578379 0.772735 z m 1.367944 1.827622 -0.5790601 -0.773645 10.1383789 -7.57704 0.579059 0.773646 z M 22.987996 10.79238 20.424727 12.712363 16.547751 7.5325828 19.110793 5.6141916 Z"/>
+                        <Path Fill="{Binding Foreground, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=Button}}" StrokeThickness="2.5" StrokeMiterLimit="4" Data="M 15.259747 8.497342 3.7553047 17.107508 1.7950772 22.615519 7.6306893 22.287059 19.136041 13.676213 Z M 5.3043622 19.160978 4.7253021 18.387332 14.863681 10.810292 15.44206 11.583027 Z m 1.367944 1.827622 -0.5790601 -0.773645 10.1383799 -7.57704 0.579059 0.773646 z M 22.987997 10.79238 20.424728 12.712363 16.547752 7.532582 19.110794 5.6141913 Z"/>
+                    </Canvas>
+                </Viewbox>
+            </DataTemplate>
+            
+
+            <DataTemplate x:Key="ApplyPresetIcon">
+                <Path Stretch="Uniform" Fill="{Binding Foreground, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=Button}}" Data="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm-1.25 17.292l-4.5-4.364 1.857-1.858 2.643 2.506 5.643-5.784 1.857 1.857-7.5 7.643z"/>
+            </DataTemplate>
+
+            <DataTemplate x:Key="ResetSettingsIcon">
+                <Path Stretch="Uniform" Fill="{Binding Foreground, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=Button}}" Data="M2.458 9.012c-.297.947-.458 1.955-.458 3 0 5.52 4.481 10 10 10 5.52 0 10-4.48 10-10 0-5.519-4.48-10-10-10-2.121 0-4.083.668-5.703 1.796l1.703 2.204h-6.58l1.935-6.012 1.718 2.223c1.958-1.389 4.346-2.211 6.927-2.211 6.623 0 12 5.377 12 12s-5.377 11.988-12 11.988-12-5.365-12-11.988c0-1.036.132-2.041.379-3h2.079zm10.35-3.012c.292.821.375 1.346 1.01 1.609.637.264 1.073-.052 1.854-.423l1.142 1.142c-.373.787-.687 1.218-.423 1.854.262.634.784.716 1.609 1.009v1.617c-.816.29-1.347.375-1.61 1.01-.264.636.052 1.071.424 1.853l-1.142 1.142c-.79-.375-1.219-.687-1.85-.424-.639.265-.723.793-1.014 1.611h-1.616c-.292-.821-.375-1.347-1.01-1.61-.637-.264-1.072.052-1.854.423l-1.142-1.142c.366-.771.689-1.212.423-1.854-.263-.635-.793-.719-1.609-1.009v-1.617c.817-.29 1.346-.373 1.609-1.009.264-.637-.051-1.07-.423-1.854l1.142-1.142c.788.374 1.218.687 1.854.423.635-.263.719-.792 1.01-1.609h1.616zm-.808 8c-1.105 0-2-.896-2-2 0-1.105.895-2.001 2-2.001 1.104 0 2 .896 2 2.001 0 1.104-.896 2-2 2z"/>
+            </DataTemplate>
+
+            <DataTemplate x:Key="ClearShadersIcon">
+                <Path Stretch="Uniform" Fill="{Binding Foreground, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=Button}}" Data="M9 19c0 .552-.448 1-1 1s-1-.448-1-1v-10c0-.552.448-1 1-1s1 .448 1 1v10zm4 0c0 .552-.448 1-1 1s-1-.448-1-1v-10c0-.552.448-1 1-1s1 .448 1 1v10zm4 0c0 .552-.448 1-1 1s-1-.448-1-1v-10c0-.552.448-1 1-1s1 .448 1 1v10zm5-17v2h-20v-2h5.711c.9 0 1.631-1.099 1.631-2h5.315c0 .901.73 2 1.631 2h5.712zm-3 4v16h-14v-16h-2v18h18v-18h-2z"/>
+            </DataTemplate>
+
+            <DataTemplate x:Key="AddIcon">
+                <Path Stretch="Uniform" Fill="{Binding Foreground, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=Button}}"  Data="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm6 13h-5v5h-2v-5h-5v-2h5v-5h2v5h5v2z"/>
+            </DataTemplate>
+
+
+
+            <!--<Style TargetType="TextBlock">
+                <Setter Property="Foreground" Value="{DynamicResource TextColor}" />
+            </Style>-->
+
+            <!--<Style TargetType="{x:Type ToolTip}" BasedOn="{StaticResource {x:Type ToolTip}}">
+                <Setter Property="OverridesDefaultStyle" Value="true"/>
+                <Setter Property="HasDropShadow" Value="True" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ToolTip">
+                            <Grid>
+                                <Border Name="Border"
+                            Width="{TemplateBinding Width}"
+                            Height="{TemplateBinding Height}"                            
+                            Margin="0,0,0,0"
+                            Background="Beige" 
+                            BorderBrush="Black"
+                            BorderThickness="1" 
+                            CornerRadius="1"/>
+                                <TextBlock Foreground="Black" Margin="5" HorizontalAlignment="Center" VerticalAlignment="Top" Text="{Binding Path=Content, RelativeSource={RelativeSource TemplatedParent}}"/>
+                            </Grid>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>-->
+
+            <Style TargetType="GridSplitter">
+                <Setter Property="Background" Value="{DynamicResource BorderColor2}"/>
+            </Style>
+
+            <Style x:Key="SeparatorStyle" TargetType="{x:Type Border}">
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}"/>
+                <Setter Property="Margin" Value="2,0,2,0"/>
+                <Setter Property="Width" Value="1"/>
+                <Setter Property="SnapsToDevicePixels" Value="True"/>
+            </Style>
+
+
+            <!-- This style is used for buttons, to remove the WPF default 'animated' mouse over effect -->
+            <Style x:Key="IconButton" TargetType="Button">
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="Foreground" Value="{DynamicResource TextColor}" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Grid Background="{TemplateBinding Background}">
+                                <ContentPresenter />
+                            </Grid>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+                <Style.Triggers>
+                    <Trigger Property="IsEnabled" Value="False">
+                        <Setter Property="Foreground" Value="{DynamicResource DisabledColor}"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+
+
+        </ResourceDictionary>
+
+    </Application.Resources>
+</Application>
+
