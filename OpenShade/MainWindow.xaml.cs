@@ -24,6 +24,8 @@ namespace OpenShade
 
     public partial class MainWindow : Window
     {
+        // @VERY_IMPORTANT TODO: Find a way to make sure the backup shader files are actually the default ones!!!
+        // Otherwise the program WILL NOT work. Period.
 
         Dictionary<string, Tweak> tweaks;
         Dictionary<string, CustomTweak> customTweaks;
@@ -115,10 +117,26 @@ namespace OpenShade
             {
                 if (Directory.Exists(shaderDirectory))
                 {
-                    Directory.CreateDirectory("Backup Shaders");
-                    if (fileData.CopyShaderFiles(shaderDirectory, backupDirectory))
+                    MessageBoxResult result = MessageBox.Show("OpenShade will backup your Prepar3D shaders now.\r\n Make sure the files are the original ones!", "Backup", MessageBoxButton.OKCancel, MessageBoxImage.Exclamation, MessageBoxResult.OK);
+                    if (result == MessageBoxResult.OK)
                     {
-                        Log(ErrorType.None, "Shaders backed up");
+                        Directory.CreateDirectory("Backup Shaders");
+                        if (fileData.CopyShaderFiles(shaderDirectory, backupDirectory))
+                        {
+                            Log(ErrorType.None, "Shaders backed up");
+                        }
+                    }
+                    else {
+                        Log(ErrorType.Warning, "Shaders were not backed up. OpenShade can not run.");
+                        NewPreset_btn.IsEnabled = false;
+                        OpenPreset_btn.IsEnabled = false;
+                        SavePreset_btn.IsEnabled = false;
+                        SavePresetAs_btn.IsEnabled = false;
+                        ApplyPreset_btn.IsEnabled = false;
+                        ResetShaderFiles_btn.IsEnabled = false;
+                        ClearShaders_btn.IsEnabled = false;
+
+                        return;
                     }
                 }
             }
@@ -137,7 +155,13 @@ namespace OpenShade
 
             if (presetPath != null)
             {
-                LoadPreset();
+                if (File.Exists(presetPath))
+                {
+                    LoadPreset();
+                }
+                else {
+                    Log(ErrorType.Error, "Active Preset file [" + presetName + "] not found");
+                }
             }
         }
 

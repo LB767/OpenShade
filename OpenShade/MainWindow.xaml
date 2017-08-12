@@ -15,7 +15,7 @@
             <RowDefinition Height="200" MinHeight="50"/>
         </Grid.RowDefinitions>
         <StackPanel Grid.Row="0" Margin="0,0,0,0" Orientation="Horizontal" Background="{DynamicResource BackgroundColor1}">
-            <Button HorizontalAlignment="Left" Height="20" Margin="10" Click="NewPreset_Click" ToolTip="New Preset" ContentTemplate="{DynamicResource NewFileIcon}">
+            <Button x:Name="NewPreset_btn" HorizontalAlignment="Left" Height="20" Margin="10" Click="NewPreset_Click" ToolTip="New Preset" ContentTemplate="{DynamicResource NewFileIcon}">
                 <Button.Style>
                     <Style TargetType="Button" BasedOn="{StaticResource IconButton}">
                         <Style.Triggers>
@@ -26,7 +26,7 @@
                     </Style>
                 </Button.Style>
             </Button>
-            <Button HorizontalAlignment="Left" Height="20" Margin="10" Click="OpenPreset_Click" ToolTip="Open Preset..." ContentTemplate="{DynamicResource OpenFileIcon}">
+            <Button x:Name="OpenPreset_btn" HorizontalAlignment="Left" Height="20" Margin="10" Click="OpenPreset_Click" ToolTip="Open Preset..." ContentTemplate="{DynamicResource OpenFileIcon}">
                 <Button.Style>
                     <Style TargetType="Button" BasedOn="{StaticResource IconButton}">
                         <Style.Triggers>
@@ -37,7 +37,7 @@
                     </Style>
                 </Button.Style>
             </Button>
-            <Button HorizontalAlignment="Left" Height="20" Margin="10" Click="SavePreset_Click" ToolTip="Save Preset" ContentTemplate="{DynamicResource SaveFileIcon}">
+            <Button x:Name="SavePreset_btn" HorizontalAlignment="Left" Height="20" Margin="10" Click="SavePreset_Click" ToolTip="Save Preset" ContentTemplate="{DynamicResource SaveFileIcon}">
                 <Button.Style>
                     <Style TargetType="Button" BasedOn="{StaticResource IconButton}">
                         <Style.Triggers>
@@ -48,7 +48,7 @@
                     </Style>
                 </Button.Style>
             </Button>
-            <Button HorizontalAlignment="Left" Height="20" Margin="10" Click="SavePresetAs_Click" ToolTip="Save Preset As..." ContentTemplate="{DynamicResource SaveFileAsIcon}">
+            <Button x:Name="SavePresetAs_btn" HorizontalAlignment="Left" Height="20" Margin="10" Click="SavePresetAs_Click" ToolTip="Save Preset As..." ContentTemplate="{DynamicResource SaveFileAsIcon}">
                 <Button.Style>
                     <Style TargetType="Button" BasedOn="{StaticResource IconButton}">
                         <Style.Triggers>
@@ -62,7 +62,7 @@
 
             <Border Style="{StaticResource SeparatorStyle}" Margin="5,5,5,5"/>
 
-            <Button HorizontalAlignment="Left" Height="20" Margin="10" Click="ApplyPreset" ToolTip="Apply Preset" ContentTemplate="{DynamicResource ApplyPresetIcon}">
+            <Button x:Name="ApplyPreset_btn" HorizontalAlignment="Left" Height="20" Margin="10" Click="ApplyPreset" ToolTip="Apply Preset" ContentTemplate="{DynamicResource ApplyPresetIcon}">
                 <Button.Style>
                     <Style TargetType="Button" BasedOn="{StaticResource IconButton}">
                         <Style.Triggers>
@@ -72,11 +72,14 @@
                             <Trigger Property="IsMouseOver" Value="False">
                                 <Setter Property="Foreground" Value="Green"/>
                             </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Foreground" Value="{DynamicResource DisabledColor}"/>
+                            </Trigger>
                         </Style.Triggers>
                     </Style>
                 </Button.Style>
             </Button>
-            <Button HorizontalAlignment="Left" Height="20" Margin="10" Click="ResetShaderFiles" ToolTip="Restore default shader files" ContentTemplate="{DynamicResource ResetSettingsIcon}">
+            <Button x:Name="ResetShaderFiles_btn" HorizontalAlignment="Left" Height="20" Margin="10" Click="ResetShaderFiles" ToolTip="Restore default shader files" ContentTemplate="{DynamicResource ResetSettingsIcon}">
                 <Button.Style>
                     <Style TargetType="Button" BasedOn="{StaticResource IconButton}">
                         <Style.Triggers>
@@ -87,7 +90,7 @@
                     </Style>
                 </Button.Style>
             </Button>
-            <Button HorizontalAlignment="Left" Height="20" Margin="10" ToolTip="Clear shader cache" Click="ClearShaders_Click" ContentTemplate="{DynamicResource ClearShadersIcon}">
+            <Button x:Name="ClearShaders_btn" HorizontalAlignment="Left" Height="20" Margin="10" ToolTip="Clear shader cache" Click="ClearShaders_Click" ContentTemplate="{DynamicResource ClearShadersIcon}">
                 <Button.Style>
                     <Style TargetType="Button" BasedOn="{StaticResource IconButton}">
                         <Style.Triggers>

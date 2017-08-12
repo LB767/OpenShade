@@ -38,6 +38,7 @@ namespace OpenShade.Classes
             if (index < 0) { return text; }
 
             int index2 = text.IndexOf(search, index + search.Length);
+            if (index2 < 0) { return text; }
 
             string result = text.Substring(0, index2) + replace + text.Substring(index2 + search.Length);
             success = true;
