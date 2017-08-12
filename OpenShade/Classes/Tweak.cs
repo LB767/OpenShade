@@ -52,7 +52,7 @@ namespace OpenShade.Classes
         public string dataName; // name of the parameter in the .ini file
         public string name; // name of the parameter in the UI
         public string description;
-        public string value;
+        public string value;       
         public string defaultValue;
         public double min;
         public double max;

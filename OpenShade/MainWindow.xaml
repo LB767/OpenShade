@@ -161,10 +161,12 @@
                     <Separator/>
                     <Grid Margin="10">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="360"/>                            
-                        </Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="360"/>
+                            <ColumnDefinition Width="100*"/>
+                            </Grid.ColumnDefinitions>
                         <UniformGrid x:Name="ParameterStack" Grid.Column="0" Columns="2"/>
-                    </Grid>
+                        <StackPanel x:Name="TweakClearStack" Grid.Column="1"/>
+                        </Grid>
                 </StackPanel>
             </Grid>
         </TabItem>
@@ -203,8 +205,10 @@
                         <Grid Margin="10">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="360"/>
+                                <ColumnDefinition Width="100*"/>
                             </Grid.ColumnDefinitions>
                             <UniformGrid x:Name="PostProcessStack" Grid.Column="0" Columns="2"/>
+                            <StackPanel x:Name="PostClearStack" Grid.Column="1"/>
                         </Grid>
                     </StackPanel>
                     
@@ -248,7 +252,7 @@
                                         <TextBlock Text="{Binding name}">
                                             <TextBlock.ContextMenu>
                                                 <ContextMenu DataContext="{Binding RelativeSource={RelativeSource Self}, Path=PlacementTarget.DataContext}">
-                                                    <MenuItem Header="Delete" Click="DeleteCustomTweak"/>
+                                                    <MenuItem Header="Delete" Click="DeleteCustomTweak" Foreground="{DynamicResource TextColor}"/>
                                                 </ContextMenu>
                                             </TextBlock.ContextMenu>
                                         </TextBlock>
@@ -290,7 +294,7 @@
 
                         <!-- Input -->
                         <TextBox x:Name="CustomTweakName_TextBox" LostFocus="ParameterText_LostFocus" Grid.Row="0" Grid.Column="1" Width="250" HorizontalAlignment="Left" VerticalContentAlignment="Center" Margin="0,5,0,5"/>
-                        <ComboBox x:Name="CustomTweakShaderFile_ComboBox" Foreground="{DynamicResource TextColor}" Grid.Row="1" Grid.Column="1" VerticalAlignment="Center" Width="250" HorizontalAlignment="Left" SelectionChanged="ShaderFile_SelectionChanged" Margin="0,5,0,5"/>
+                        <ComboBox x:Name="CustomTweakShaderFile_ComboBox" SelectionChanged="ShaderFile_SelectionChanged"  Foreground="{DynamicResource TextColor}" Grid.Row="1" Grid.Column="1" VerticalAlignment="Center" Width="250" HorizontalAlignment="Left" Margin="0,5,0,5"/>
                         <RichTextBox x:Name="CustomTweakOldCode_RichTextBox" LostFocus="RichTextBox_LostFocus"  Grid.Row="2" Grid.Column="1" Height="170" Margin="0,5,0,5" VerticalScrollBarVisibility="Auto"/>
                         <RichTextBox x:Name="CustomTweakNewCode_RichTextBox" LostFocus="RichTextBox_LostFocus"  Grid.Row="3" Grid.Column="1" Height="170" Margin="0,5,0,5" VerticalScrollBarVisibility="Auto"/>
 
@@ -301,7 +305,7 @@
                 <DockPanel Margin="3,3,3,3">
 
                     <GroupBox Header="Preset comments" Margin="5" DockPanel.Dock="Top" VerticalAlignment="Top">
-                        <TextBox x:Name="PresetComments_TextBox" VerticalAlignment="Bottom"  Height="180" Margin="20,10,0,10" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"/>
+                        <TextBox x:Name="PresetComments_TextBox" VerticalAlignment="Bottom"  Height="180" Margin="20,10,0,10" VerticalContentAlignment="Top" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"/>
                     </GroupBox>
 
                     <GroupBox Header="Directories" Margin="5" DockPanel.Dock="Top" VerticalAlignment="Top">

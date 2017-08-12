@@ -353,8 +353,8 @@
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type MenuItem}">
                     <Border x:Name="Border"
-                        Background="{DynamicResource BackgroundColor1}"
-                        BorderBrush="{DynamicResource BackgroundColor1}"
+                        Background="{DynamicResource BackgroundColor2}"
+                        BorderBrush="{DynamicResource BorderColor2}"
                         BorderThickness="1">
                         <Grid>
                             <Grid.ColumnDefinitions>

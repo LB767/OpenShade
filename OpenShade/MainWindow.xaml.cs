@@ -18,6 +18,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Windows.Controls.Primitives;
+using System.Diagnostics;
 
 namespace OpenShade
 {
@@ -159,6 +160,7 @@ namespace OpenShade
             if (Tweak_List.SelectedItem != null)
             {
                 ParameterStack.Children.Clear();
+                TweakClearStack.Children.Clear();
 
                 Tweak selectedTweak = (Tweak)Tweak_List.SelectedItem;
                 TweakTitleTextblock.Content = selectedTweak.name;
@@ -167,6 +169,18 @@ namespace OpenShade
                 if (selectedTweak.parameters != null)
                 {
                     ParameterStack.Rows = selectedTweak.parameters.Count();
+
+                    Button resetButton = new Button();
+                    resetButton.Content = "Reset";
+                    resetButton.ToolTip = "Reset parameters to their default value";
+                    resetButton.Width = 50;
+                    resetButton.Height = 25;
+                    resetButton.VerticalAlignment = VerticalAlignment.Top;
+                    resetButton.HorizontalAlignment = HorizontalAlignment.Right;
+                    resetButton.Click += new RoutedEventHandler(ResetParameters_Click);
+
+                    Grid.SetColumn(resetButton, 1);
+                    TweakClearStack.Children.Add(resetButton);                    
 
                     foreach (Parameter param in selectedTweak.parameters)
                     {
@@ -291,10 +305,25 @@ namespace OpenShade
             }
         }
 
-        private void DeleteCustomTweak(object sender, RoutedEventArgs e) { }
+        private void DeleteCustomTweak(object sender, RoutedEventArgs e)
+        {
+            if (CustomTweak_List.SelectedItem != null)
+            {                
+                CustomTweak selectedTweak = (CustomTweak)CustomTweak_List.SelectedItem;
+                var item = customTweaks.First(p => p.Value == selectedTweak); // Not the best
+                customTweaks.Remove(item.Key);
+                CustomTweak_List.Items.Refresh();
+            }
+        }
+        
+        private void ShaderFile_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            Debug.Assert(CustomTweak_List.SelectedItem != null);
+            Debug.Assert(CustomTweakShaderFile_ComboBox.SelectedItem != null);
 
-
-        private void ShaderFile_SelectionChanged(object sender, SelectionChangedEventArgs e) { }
+            CustomTweak selectedTweak = (CustomTweak)CustomTweak_List.SelectedItem;
+            selectedTweak.shaderFile = (string)CustomTweakShaderFile_ComboBox.SelectedItem;
+        }
         #endregion
 
         #region PostProcesses
@@ -304,6 +333,7 @@ namespace OpenShade
             if (PostProcess_List.SelectedItem != null)
             {
                 PostProcessStack.Children.Clear();
+                PostClearStack.Children.Clear();
 
                 PostProcess selectedPost = (PostProcess)PostProcess_List.SelectedItem;
                 PostTitleTextblock.Content = selectedPost.name;
@@ -312,6 +342,18 @@ namespace OpenShade
                 if (selectedPost.parameters != null)
                 {
                     PostProcessStack.Rows = selectedPost.parameters.Count();
+
+                    Button resetButton = new Button();
+                    resetButton.Content = "Reset";
+                    resetButton.ToolTip = "Reset parameters to their default value";
+                    resetButton.Width = 50;
+                    resetButton.Height = 25;
+                    resetButton.VerticalAlignment = VerticalAlignment.Top;
+                    resetButton.HorizontalAlignment = HorizontalAlignment.Right;
+                    resetButton.Click += new RoutedEventHandler(ResetParameters_Click);
+
+                    Grid.SetColumn(resetButton, 1);
+                    PostClearStack.Children.Add(resetButton);                    
 
                     foreach (Parameter param in selectedPost.parameters)
                     {
@@ -400,13 +442,13 @@ namespace OpenShade
         #endregion
 
         #region ParametersUpdates
-        protected void Checkbox_Click(object sender, EventArgs e)
+        private void Checkbox_Click(object sender, EventArgs e)
         {
             CheckBox checkbox = (CheckBox)sender;
-            TabItem tab = (TabItem)((Grid)((StackPanel)((Grid)((UniformGrid)checkbox.Parent).Parent).Parent).Parent).Parent;
+            TabItem currentTab = HelperFunctions.FindAncestorOrSelf<TabItem>(checkbox);
             Parameter param = null;
 
-            switch (tab.Header.ToString())
+            switch (currentTab.Header.ToString())
             {
                 case "Tweaks":
                     param = ((Tweak)(Tweak_List.SelectedItem)).parameters.First(p => p.id == checkbox.Uid);
@@ -427,7 +469,7 @@ namespace OpenShade
             }
         }
 
-        protected void ParameterText_LostFocus(object sender, EventArgs e)
+        private void ParameterText_LostFocus(object sender, EventArgs e)
         {
             TextBox spinner = (TextBox)sender;
             TabItem currentTab = HelperFunctions.FindAncestorOrSelf<TabItem>(spinner);
@@ -455,17 +497,17 @@ namespace OpenShade
             if (currentTab.Header.ToString() != "Custom") { param.value = spinner.Text; }
         }
 
-        protected void RGB_LostFocus(object sender, EventArgs e)
+        private void RGB_LostFocus(object sender, EventArgs e)
         {
             TextBox senderTextBox = (TextBox)sender;
 
             string uid = senderTextBox.Uid.Split('_')[0];
             string channel = senderTextBox.Uid.Split('_')[1];
 
-            TabItem tab = (TabItem)((Grid)((StackPanel)((Grid)((UniformGrid)((GroupBox)((StackPanel)senderTextBox.Parent).Parent).Parent).Parent).Parent).Parent).Parent;
+            TabItem currentTab = HelperFunctions.FindAncestorOrSelf<TabItem>(senderTextBox);
             Parameter param = null;
 
-            switch (tab.Header.ToString())
+            switch (currentTab.Header.ToString())
             {
                 case "Tweaks":
                     param = ((Tweak)(Tweak_List.SelectedItem)).parameters.First(p => p.id == uid);
@@ -494,7 +536,7 @@ namespace OpenShade
             }
         }
 
-        protected void RichTextBox_LostFocus(object sender, EventArgs e)
+        private void RichTextBox_LostFocus(object sender, EventArgs e)
         {
             RichTextBox rich = (RichTextBox)sender;            
 
@@ -508,6 +550,33 @@ namespace OpenShade
                     ((CustomTweak)CustomTweak_List.SelectedItem).newCode = new TextRange(CustomTweakNewCode_RichTextBox.Document.ContentStart, CustomTweakNewCode_RichTextBox.Document.ContentEnd).Text;
                     break;
             }                   
+        }
+
+        private void ResetParameters_Click(object sender, EventArgs e)
+        {
+            Button btn = (Button)sender;
+            TabItem currentTab = HelperFunctions.FindAncestorOrSelf<TabItem>(btn);
+
+            switch (currentTab.Header.ToString())
+            {
+                case "Tweaks":
+                    Tweak selectedTweak = (Tweak)Tweak_List.SelectedItem;
+                    foreach (var param in selectedTweak.parameters)
+                    {
+                        param.value = param.defaultValue;
+                    }
+                    TweakList_SelectionChanged(null, null); // Trick... would not need this if we had standard bindings
+                    break;
+
+                case "Post Process":
+                    PostProcess selectedPost = (PostProcess)PostProcess_List.SelectedItem;
+                    foreach (var param in selectedPost.parameters)
+                    {
+                        param.value = param.defaultValue;
+                    }
+                    PostProcessList_SelectionChanged(null, null);
+                    break;             
+            }
         }
         #endregion
 
@@ -655,14 +724,13 @@ namespace OpenShade
             fileData.LoadShaderFiles(backupDirectory); // Always load the unmodified files;
 
             // NOTE: Not sure what is the best way to implement this... for now just handle each tweak on a case by case basis, which is a lot of code but fine for now
-            // NOTE: This code is getting more awful by the minute
-            // TODO: Yeah it's definitely terrible, will have to do something about all this null stuff
-            //       and NO, no try{} catch{} everywhere!!!
+            // NOTE: This code is getting more awful by the minute           
 
             foreach (var tweak in tweaks.Values)
             {
                 if (tweak.isEnabled)
                 {
+                    bool supported = true;
                     bool success = false;
                     string currentFile = "";
 
@@ -716,6 +784,7 @@ namespace OpenShade
                         case "Cloud shadow depth":
                             currentFile = FileIO.cloudFile;
                             //shadowText = shadowText.ReplaceAll("cloudShadowIntensity = lerp(0.15f,1.0f,cloudShadows.r);", "cloudShadowIntensity = lerp(x, 1.0, cloudShadows.r);");
+                            supported = false;
                             break;
 
                         // NOTE: Only the 1st entry needs to be replaced
@@ -952,9 +1021,12 @@ namespace OpenShade
                     }
 
 
-                    if (!success)
+                    if (!success && supported)
                     {
                         Log(ErrorType.Error, "Failed to apply tweak [" + tweak.name + "] in " + currentFile + " file.");
+                    }
+                    else if (!success && !supported) {
+                        Log(ErrorType.Warning, "Did not apply tweak [" + tweak.name + "] in " + currentFile + " file. Tweak is not upported.");
                     }
                     else
                     {
