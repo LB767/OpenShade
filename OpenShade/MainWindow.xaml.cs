@@ -6,18 +6,11 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using System.Windows.Controls.Primitives;
 using System.Diagnostics;
 
 namespace OpenShade
@@ -1002,8 +995,11 @@ namespace OpenShade
 
                         case "Contrast tuning":
                             currentFile = FileIO.HDRFile;
-                            // TODO: no idea where the tweak value goes...
-                            HDRText = HDRText.ReplaceAll(ref success, "color = (color * (6.2f * color + 0.5f)) / (color * (6.2f * color + 1.7f) + 0.06f);", "color = (color * (6.2f * color + 0.88)) / (color * (6.2f * color + 2.08) + 0.06);");
+                            double tweakValue = double.Parse(tweak.parameters[0].value); // TODO: Robustness, error checking etc
+                            double val1 = 1 + (0 - 1) * tweakValue;
+                            double val2 = 2.2 + (1.2 - 2.2) * tweakValue;
+
+                            HDRText = HDRText.ReplaceAll(ref success, "color = (color * (6.2f * color + 0.5f)) / (color * (6.2f * color + 1.7f) + 0.06f);", $"color = (color * (6.2f * color + {val1.ToString()})) / (color * (6.2f * color + {val2.ToString()}) + 0.06);");
                             break;
 
                         case "Scene tone adjustment":
