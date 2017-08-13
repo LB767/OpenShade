@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:OpenShade"
         mc:Ignorable="d"
-        Title="Open Shade" WindowStartupLocation="CenterScreen" Width="1000" Height="800" Icon="Assets\icon.ico" Loaded="Window_Loaded" Closing="Window_Closing" Style="{DynamicResource WindowStyle}">
+        Title="Open Shade" WindowStartupLocation="CenterScreen" Width="1000" Height="800" Icon="Assets\icon.ico" Loaded="Window_Loaded" Closed="Window_Closed" Style="{DynamicResource WindowStyle}">
 
     <Grid>
         <Grid.RowDefinitions>

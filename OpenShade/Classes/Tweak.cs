@@ -58,6 +58,8 @@ namespace OpenShade.Classes
         public double max;
         public UIType control;
 
+        public Parameter() { }
+
         public Parameter(string DataName, string Name, string Val, string Default, double Min, double Max, UIType Control, string Descr = null) {
             id = Guid.NewGuid().ToString();
             dataName = DataName;
@@ -95,6 +97,17 @@ namespace OpenShade.Classes
             max = Max;
             control = Control;
         }
+
+        public override int GetHashCode()
+        {
+            unchecked // Overflow is fine, just wrap
+            {
+                int hash = 17;
+                hash = hash * 29 + name.GetHashCode();
+                hash = hash * 29 + value.GetHashCode();
+                return hash;
+            }
+        }
     }
 
     public class Tweak : INotifyPropertyChanged
@@ -116,6 +129,8 @@ namespace OpenShade.Classes
         //public ChangeType tweakType;
         //public string referenceCode;
         //public string newCode;
+
+        public Tweak() { }
 
         public Tweak(Category Cat, string Name, string Descr, bool IsOn, List<Parameter> Params)
         {
@@ -301,6 +316,17 @@ namespace OpenShade.Classes
 
         }
 
+        public override int GetHashCode()
+        {
+            unchecked // Overflow is fine, just wrap
+            {
+                int hash = 17;
+                hash = hash * 29 + name.GetHashCode();
+                hash = hash * 29 + _isEnabled.GetHashCode();
+                return hash;
+            }
+        }
+
         public event PropertyChangedEventHandler PropertyChanged;
     }
 
@@ -332,19 +358,35 @@ namespace OpenShade.Classes
             isEnabled = IsOn;
         }
 
+        public override int GetHashCode()
+        {
+            unchecked // Overflow is fine, just wrap
+            {
+                int hash = 17;
+                hash = hash * 29 + name.GetHashCode();
+                hash = hash * 29 + shaderFile.GetHashCode();
+                hash = hash * 29 + index.GetHashCode();
+                hash = hash * 29 + oldCode.GetHashCode();
+                hash = hash * 29 + newCode.GetHashCode();
+                hash = hash * 29 + isEnabled.GetHashCode();
+                return hash;
+            }
+        }
+
         public event PropertyChangedEventHandler PropertyChanged;
     }
 
-    public class PostProcess {
+    public class PostProcess
+    {
         public string name { get; set; }
         public string description { get; set; }
         public bool isEnabled { get; set; }
         public List<Parameter> parameters { get; set; }
 
         public PostProcess(string Name, bool IsOn, List<Parameter> Params, string Descr)
-        {            
+        {
             name = Name;
-            description = Descr;       
+            description = Descr;
             isEnabled = IsOn;
             parameters = Params;
         }
@@ -414,6 +456,17 @@ namespace OpenShade.Classes
 
         }
 
+
+        public override int GetHashCode()
+        {
+            unchecked // Overflow is fine, just wrap
+            {
+                int hash = 17;
+                hash = hash * 29 + name.GetHashCode();
+                hash = hash * 29 + isEnabled.GetHashCode();
+                return hash;
+            }
+        }
     }
 
 

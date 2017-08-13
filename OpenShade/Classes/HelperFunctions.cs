@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
 
@@ -185,6 +184,56 @@ namespace OpenShade.Classes
                 obj = GetParent(obj);
             }
             return null;
+        }
+
+
+
+
+        public static int GetDictHashCode<TKey,TValue>(this IDictionary<TKey,TValue> sequence)
+        {
+            int hash = 0;
+            List<TValue> list = sequence.Values.ToList();
+
+            foreach (var tval in list)
+            {
+                if (typeof(TValue) == typeof(Tweak))
+                {
+                    Tweak item = tval as Tweak;
+                    hash += item.GetHashCode();
+                    hash += item.parameters.GetSequenceHashCode();
+                }
+                else if (typeof(TValue) == typeof(CustomTweak))
+                {
+                    CustomTweak item = tval as CustomTweak;
+                    hash += item.GetHashCode();
+                    hash += item.GetHashCode();
+                }
+                else if (typeof(TValue) == typeof(PostProcess))
+                {
+                    PostProcess item = tval as PostProcess;
+                    hash += item.GetHashCode();
+                    hash += item.parameters.GetSequenceHashCode();
+                }                
+            }           
+
+            return hash;
+        }
+
+
+        public static int GetSequenceHashCode<T>(this IList<T> sequence)
+        {
+            const int seed = 487;
+            const int modifier = 31;
+
+            if (sequence == null) {
+                return 0;
+            }
+
+            unchecked
+            {
+                return sequence.Aggregate(seed, (current, item) =>
+                    (current * modifier) + item.GetHashCode());
+            }
         }
     }
 

@@ -24,12 +24,15 @@ namespace OpenShade
 
     public partial class MainWindow : Window
     {
-        // @VERY_IMPORTANT TODO: Find a way to make sure the backup shader files are actually the default ones!!!
-        // Otherwise the program WILL NOT work. Period.
-
+        int tweaksHash;
+        int customTweaksHash;
+        int postProcessesHash;
+        string commentHash; // that's just the original comments
+     
         Dictionary<string, Tweak> tweaks;
         Dictionary<string, CustomTweak> customTweaks;
-        Dictionary<string, PostProcess> postProcesses;   
+        Dictionary<string, PostProcess> postProcesses;
+        string comment;
 
         const string P3DRegistryPath = "HKEY_LOCAL_MACHINE\\SOFTWARE\\Lockheed Martin\\Prepar3D v4";
         string cacheDirectory = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\Lockheed Martin\\Prepar3D v4\\Shaders\\";
@@ -165,8 +168,17 @@ namespace OpenShade
             }
         }
 
-        private void Window_Closing(object sender, CancelEventArgs e)
+        private void Window_Closed(object sender, EventArgs e)
         {
+            if (tweaks.GetDictHashCode() != tweaksHash || customTweaks.GetDictHashCode() != customTweaksHash || postProcesses.GetDictHashCode() != postProcessesHash || comment != commentHash)
+            {
+                MessageBoxResult result = MessageBox.Show("Some changes were not saved.\r\nWould you like to save them now?", "Save", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+                if (result == MessageBoxResult.Yes)
+                {
+                    SavePreset_Click(null, null);
+                }
+            }
+
             fileData.SaveSettings(currentDirectory + "\\" + FileIO.settingsFile);
         }
 
@@ -670,7 +682,6 @@ namespace OpenShade
 
         private void LoadPreset()
         {
-
             try
             {
                 IniFile pref = new IniFile(presetPath);
@@ -679,6 +690,11 @@ namespace OpenShade
                 fileData.LoadCustomTweaks(customTweaks, pref);
                 fileData.LoadPostProcesses(postProcesses, pref);
                 PresetComments_TextBox.Text = fileData.LoadComments(pref);
+
+                tweaksHash = tweaks.GetDictHashCode();
+                customTweaksHash = customTweaks.GetDictHashCode();
+                postProcessesHash = postProcesses.GetDictHashCode();
+                commentHash = comment;
 
                 Tweak_List.Items.Refresh();
                 PostProcess_List.Items.Refresh();
@@ -697,8 +713,14 @@ namespace OpenShade
             IniFile pref = new IniFile(presetPath);
             try
             {
-                string comment = PresetComments_TextBox.Text;
+                comment = PresetComments_TextBox.Text;
                 fileData.SavePreset(presetPath, tweaks, customTweaks, postProcesses, comment, pref);
+
+                tweaksHash = tweaks.GetDictHashCode();
+                customTweaksHash = customTweaks.GetDictHashCode();
+                postProcessesHash = postProcesses.GetDictHashCode();
+                commentHash = comment;
+
                 Log(ErrorType.None, "Preset [" + presetName + "] saved in " + presetPath);
             }
             catch (Exception ex)
@@ -723,8 +745,14 @@ namespace OpenShade
                 IniFile pref = new IniFile(presetPath);
                 try
                 {
-                    string comment = PresetComments_TextBox.Text;
+                    comment = PresetComments_TextBox.Text;
                     fileData.SavePreset(presetPath, tweaks, customTweaks, postProcesses, comment, pref);
+
+                    tweaksHash = tweaks.GetDictHashCode();
+                    customTweaksHash = customTweaks.GetDictHashCode();
+                    postProcessesHash = postProcesses.GetDictHashCode();
+                    commentHash = comment;
+
                     Log(ErrorType.None, "Preset [" + presetName + "] saved in " + presetPath);
                 }
                 catch (Exception ex)
