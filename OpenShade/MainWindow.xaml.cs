@@ -1368,7 +1368,7 @@ const float3 Vibrance_RGB_balance = float3({post.parameters[1].value});
                             HDRText = HDRText.AddBefore(ref success, "return EndColor;", "EndColor = VibranceMain(vert, EndColor);\r\n");
                             break;
 
-                        case "Cineon DPX":
+                          case "Cineon DPX":
                             HDRText = HDRText.AddBefore(ref success, "// Applies exposure and tone mapping to the input, and combines it with the",
 $@"float4 DPXMain(PsQuad vert, float4 Inp_color) : SV_Target
 {{
@@ -1413,6 +1413,7 @@ const float Strength  = {post.parameters[5].value};
                             HDRText = HDRText.AddBefore(ref success, "return EndColor;", "EndColor = DPXMain(vert, EndColor);\r\n");
                             break;
 
+                        // TODO: May be bugged
                         case "Tonemap":
                             HDRText = HDRText.AddBefore(ref success, "// Applies exposure and tone mapping to the input, and combines it with the",
 $@"float4 TonemapMain(PsQuad vert, float4 Inp_color) : SV_Target
@@ -1426,14 +1427,17 @@ const float3 Tonemap_FogColor = float3({post.parameters[5].value});
     uint2 uTDim, uDDim;
     srcTex.GetDimensions(uTDim.x,uTDim.y);
     int3 iTexCoord = int3(uTDim.x * vert.texcoord.x, uTDim.y * vert.texcoord.y, 0);
+    
     float4 colorInput = Inp_color;
     float3 color = colorInput.rgb;
     color = saturate(color - Tonemap_Defog * Tonemap_FogColor);
     color *= pow(2.0f, Tonemap_Exposure);
     color = pow(color, Tonemap_Gamma);
+    
     float3 lumCoeff = float3(0.2126, 0.7152, 0.0722);
     float lum = dot(lumCoeff, color.rgb);
     float3 blend = lum.rrr;
+    
     float L = saturate( 10.0 * (lum - 0.45) );
     float3 result1 = 2.0f * color.rgb * blend;
     float3 result2 = 1.0f - 2.0f * (1.0f - blend) * (1.0f - color.rgb);

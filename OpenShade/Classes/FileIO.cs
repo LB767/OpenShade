@@ -161,8 +161,8 @@ namespace OpenShade.Classes
                             string dataB = param.dataName.Split(',')[2];
 
                             string identifiedLineR = lines.First(p => p.StartsWith(dataR));
-                            string identifiedLineG = lines.First(p => p.StartsWith(dataR));
-                            string identifiedLineB = lines.First(p => p.StartsWith(dataR));
+                            string identifiedLineG = lines.First(p => p.StartsWith(dataG));
+                            string identifiedLineB = lines.First(p => p.StartsWith(dataB));
 
                             param.value = identifiedLineR.Split('=')[1] + "," + identifiedLineG.Split('=')[1] + "," + identifiedLineB.Split('=')[1];
                         }
