@@ -14,7 +14,7 @@ namespace OpenShade.Classes
         public static string ReplaceAll(this string text, ref bool success, string search, string replace)
         {
             int index = text.IndexOf(search);
-            if (index < 0) { return text; }
+            if (index < 0) { success = false; return text; }
 
             string result = text.Replace(search, replace);
             success = true;
@@ -24,7 +24,7 @@ namespace OpenShade.Classes
         public static string ReplaceFirst(this string text, ref bool success, string search, string replace)
         {
             int index = text.IndexOf(search);
-            if (index < 0) { return text; }
+            if (index < 0) { success = false; return text; }
 
             string result = text.Substring(0, index) + replace + text.Substring(index + search.Length);
             success = true;
@@ -34,10 +34,10 @@ namespace OpenShade.Classes
         public static string ReplaceSecond(this string text, ref bool success, string search, string replace)
         {
             int index = text.IndexOf(search);
-            if (index < 0) { return text; }
+            if (index < 0) { success = false; return text; }
 
             int index2 = text.IndexOf(search, index + search.Length);
-            if (index2 < 0) { return text; }
+            if (index2 < 0) { success = false; return text; }
 
             string result = text.Substring(0, index2) + replace + text.Substring(index2 + search.Length);
             success = true;
@@ -47,7 +47,7 @@ namespace OpenShade.Classes
         public static string AddAfter(this string text, ref bool success, string referenceString, string stringToAdd, int skip = 0)
         {
             int index = text.IndexOf(referenceString);
-            if (index < 0) { return text; }
+            if (index < 0) { success = false; return text; }
 
             for (int i = 0; i < skip - 1; i++)
             {
@@ -67,7 +67,7 @@ namespace OpenShade.Classes
         public static string AddBefore(this string text, ref bool success, string referenceString, string stringToAdd)
         {
             int index = text.IndexOf(referenceString);
-            if (index < 0) { return text; }
+            if (index < 0) { success = false; return text; }
 
             while (index >= 0)
             {
@@ -82,13 +82,13 @@ namespace OpenShade.Classes
         public static string CommentOut(this string text, ref bool success, string startingString, string endingString, bool end)
         {
             int index = text.IndexOf(startingString);
-            if (index < 0) { return text; }
+            if (index < 0) { success = false; return text; }
 
             text = text.Insert(index, "/*");
 
             index = text.IndexOf(endingString);
             if (end) index += endingString.Length; // whether the comment ends at the START of endingString or at its end.
-            if (index < 0) { return text; }
+            if (index < 0) { success = false; return text; }
 
             text = text.Insert(index, "*/\r\n");
 
@@ -99,12 +99,12 @@ namespace OpenShade.Classes
         public static string CommentOut(this string text, ref bool success, string entireString)
         {
             int index = text.IndexOf(entireString);
-            if (index < 0) { return text; }
+            if (index < 0) { success = false; return text; }
 
             text = text.Insert(index, "/*");
 
             index += entireString.Length;
-            if (index < 0) { return text; }
+            if (index < 0) { success = false; return text; }
 
             text = text.Insert(index, "*/\r\n");
 

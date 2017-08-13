@@ -120,7 +120,7 @@ namespace OpenShade
             {
                 if (Directory.Exists(shaderDirectory))
                 {
-                    MessageBoxResult result = MessageBox.Show("OpenShade will backup your Prepar3D shaders now.\r\n Make sure the files are the original ones!", "Backup", MessageBoxButton.OKCancel, MessageBoxImage.Exclamation, MessageBoxResult.OK);
+                    MessageBoxResult result = MessageBox.Show("OpenShade will backup your Prepar3D shaders now.\r\nMake sure the files are the original ones!", "Backup", MessageBoxButton.OKCancel, MessageBoxImage.Exclamation, MessageBoxResult.OK);
                     if (result == MessageBoxResult.OK)
                     {
                         Directory.CreateDirectory("Backup Shaders");
@@ -168,7 +168,7 @@ namespace OpenShade
             }
         }
 
-        private void Window_Closed(object sender, EventArgs e)
+        private void Window_Closed(object sender, EventArgs e) // important to use Closed() and not Closing() because this has to happen after any LostFocus() event to have all up-to-date parameters
         {
             if (tweaks.GetDictHashCode() != tweaksHash || customTweaks.GetDictHashCode() != customTweaksHash || postProcesses.GetDictHashCode() != postProcessesHash || comment != commentHash)
             {
@@ -804,9 +804,9 @@ namespace OpenShade
                             break;
 
                         case "Cloud light scattering":
-                            currentFile = FileIO.cloudFile;
-                            cloudText.CommentOut(ref success, "if (fIntensity < -cb_mMedianLine)", "    fIntensity = clamp(fIntensity, 0, 1);", false);
-                            cloudText.AddBefore(ref success, "/*if (fIntensity < -cb_mMedianLine)", "fIntensity =  saturate(" + tweak.parameters[0].value.ToString() + " * fIntensity + " + tweak.parameters[1].value.ToString() + ");\r\n");
+                            currentFile = FileIO.cloudFile;                           
+                            cloudText = cloudText.CommentOut(ref success, "if (fIntensity < -cb_mMedianLine)", "    fIntensity = clamp(fIntensity, 0, 1);", false);
+                            cloudText = cloudText.AddBefore(ref success, "/*if (fIntensity < -cb_mMedianLine)", "fIntensity =  saturate(" + tweak.parameters[0].value.ToString() + " * fIntensity + " + tweak.parameters[1].value.ToString() + ");\r\n");
 
                             if (tweak.parameters[2].value == "1")
                             {
