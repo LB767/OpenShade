@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 
 namespace OpenShade.Classes
@@ -91,14 +90,14 @@ namespace OpenShade.Classes
         }
 
 
-        public void LoadTweaks(Dictionary<string, Tweak> tweaks, IniFile pref)
+        public void LoadTweaks(ObservableCollection<Tweak> tweaks, IniFile pref)
         {
             foreach (var tweak in tweaks) {
-                tweak.Value.isEnabled = pref.Read("IsActive", tweak.Key) == "1" ? true : false;
+                tweak.isEnabled = pref.Read("IsActive", tweak.key) == "1" ? true : false;
 
-                if (tweak.Value.parameters != null) // NOTE: Do this for now, maybe it'd be best to NOT have null lists but only empty ones, would need to change initialization!
+                if (tweak.parameters != null) // NOTE: Do this for now, maybe it'd be best to NOT have null lists but only empty ones, would need to change initialization!
                 {  
-                    foreach (var param in tweak.Value.parameters)
+                    foreach (var param in tweak.parameters)
                     {
                         if (param.control == UIType.RGB)
                         {
@@ -106,18 +105,18 @@ namespace OpenShade.Classes
                             string dataG = param.dataName.Split(',')[1];
                             string dataB = param.dataName.Split(',')[2];
 
-                            param.value = pref.Read(dataR, tweak.Key) + "," + pref.Read(dataG, tweak.Key) + "," + pref.Read(dataB, tweak.Key);
+                            param.value = pref.Read(dataR, tweak.key) + "," + pref.Read(dataG, tweak.key) + "," + pref.Read(dataB, tweak.key);
                         }
                         else
                         {
-                            param.value = pref.Read(param.dataName, tweak.Key);
+                            param.value = pref.Read(param.dataName, tweak.key);
                         }
                     }
                 }
             }           
         }
 
-        public void LoadCustomTweaks(Dictionary<string, CustomTweak> customTweaks, IniFile pref)
+        public void LoadCustomTweaks(ObservableCollection<CustomTweak> customTweaks, IniFile pref)
         {
             customTweaks.Clear();
             int count = 0;
@@ -126,14 +125,15 @@ namespace OpenShade.Classes
 
             while (customExists)
             {
-                var newTweak = new CustomTweak(pref.Read("Name", section),
+                var newTweak = new CustomTweak(section, 
+                    pref.Read("Name", section),
                     pref.Read("Shader", section),
                     int.Parse(pref.Read("Index", section)),
                     pref.Read("OldPattern", section).FromHexString(),
                     pref.Read("NewPattern", section).FromHexString(),
                     pref.Read("IsActive", section) == "1" ? true : false);
 
-                customTweaks.Add(section, newTweak);
+                customTweaks.Add(newTweak);
 
                 count++;
                 section = "CUSTOM_TWEAK" + count.ToString();
@@ -142,17 +142,17 @@ namespace OpenShade.Classes
 
         }
 
-        public void LoadPostProcesses(Dictionary<string, PostProcess> postProcesses, IniFile pref)
+        public void LoadPostProcesses(ObservableCollection<PostProcess> postProcesses, IniFile pref)
         {
             foreach (var post in postProcesses) {
-                post.Value.isEnabled = pref.Read("IsActive", post.Key) == "1" ? true : false;
+                post.isEnabled = pref.Read("IsActive", post.key) == "1" ? true : false;
 
-                string rawParams = pref.Read("Params", post.Key).FromHexString();
+                string rawParams = pref.Read("Params", post.key).FromHexString();
                 string[] lines = rawParams.Split(new string[] { "\r\n" }, StringSplitOptions.None);
 
-                if (post.Value.parameters != null)
+                if (post.parameters != null)
                 {
-                    foreach (var param in post.Value.parameters)
+                    foreach (var param in post.parameters)
                     {
                         if (param.control == UIType.RGB)
                         {
@@ -182,16 +182,16 @@ namespace OpenShade.Classes
             return result;
         }
 
-        public void SavePreset(string filepath, Dictionary<string, Tweak> tweaks, Dictionary<string, CustomTweak> customTweaks, Dictionary<string, PostProcess> postProcesses, string comment, IniFile pref)
+        public void SavePreset(string filepath, ObservableCollection<Tweak> tweaks, ObservableCollection<CustomTweak> customTweaks, ObservableCollection<PostProcess> postProcesses, string comment, IniFile pref)
         {
             // Standard tweaks    
 
             foreach (var tweak in tweaks) {
-                pref.Write("IsActive", tweak.Value.isEnabled ? "1" : "0", tweak.Key);
+                pref.Write("IsActive", tweak.isEnabled ? "1" : "0", tweak.key);
 
-                if (tweak.Value.parameters != null)
+                if (tweak.parameters != null)
                 {
-                    foreach (var param in tweak.Value.parameters)
+                    foreach (var param in tweak.parameters)
                     {
                         if (param.control == UIType.RGB)
                         {
@@ -203,13 +203,13 @@ namespace OpenShade.Classes
                             string valueG = param.value.Split(',')[1];
                             string valueB = param.value.Split(',')[2];
 
-                            pref.Write(dataR, valueR, tweak.Key);
-                            pref.Write(dataG, valueG, tweak.Key);
-                            pref.Write(dataB, valueB, tweak.Key);
+                            pref.Write(dataR, valueR, tweak.key);
+                            pref.Write(dataG, valueG, tweak.key);
+                            pref.Write(dataB, valueB, tweak.key);
                         }
                         else
                         {
-                            pref.Write(param.dataName, param.value, tweak.Key);
+                            pref.Write(param.dataName, param.value, tweak.key);
                         }
                     }
                 }
@@ -219,24 +219,24 @@ namespace OpenShade.Classes
 
             foreach (var custom in customTweaks)
             {
-                pref.Write("IsActive", custom.Value.isEnabled ? "1" : "0", custom.Key);
-                pref.Write("Name", custom.Value.name, custom.Key);
-                pref.Write("Shader", custom.Value.shaderFile, custom.Key);
-                pref.Write("Index", custom.Value.index.ToString(), custom.Key);
-                pref.Write("OldPattern", custom.Value.oldCode.ToHexString(), custom.Key);
-                pref.Write("NewPattern", custom.Value.newCode.ToHexString(), custom.Key);                
+                pref.Write("IsActive", custom.isEnabled ? "1" : "0", custom.key);
+                pref.Write("Name", custom.name, custom.key);
+                pref.Write("Shader", custom.shaderFile, custom.key);
+                pref.Write("Index", custom.index.ToString(), custom.key);
+                pref.Write("OldPattern", custom.oldCode.ToHexString(), custom.key);
+                pref.Write("NewPattern", custom.newCode.ToHexString(), custom.key);                
             }
 
             // Post-Process
             
             foreach (var post in postProcesses) {
-                pref.Write("IsActive", post.Value.isEnabled ? "1" : "0", post.Key);
+                pref.Write("IsActive", post.isEnabled ? "1" : "0", post.key);
 
                 string finalString = "";
 
-                if (post.Value.parameters != null)
+                if (post.parameters != null)
                 {
-                    foreach (var param in post.Value.parameters)
+                    foreach (var param in post.parameters)
                     {
                         if (param.control == UIType.RGB)
                         {
@@ -257,7 +257,7 @@ namespace OpenShade.Classes
                             finalString += param.dataName + "=" + param.value + "\r\n";
                         }
 
-                        pref.Write("Params", finalString.ToHexString(), post.Key);
+                        pref.Write("Params", finalString.ToHexString(), post.key);
                     }
                 }
             }

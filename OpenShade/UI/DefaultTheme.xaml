@@ -8,7 +8,7 @@
     <SolidColorBrush x:Key="BackgroundColor1" Color="#F0F0F0"/>
     <SolidColorBrush x:Key="BackgroundColor2" Color="White"/>
     <SolidColorBrush x:Key="BackgroundColor3" Color="#FFD9E4EE"/>
-    <SolidColorBrush x:Key="BorderColor1" Color="#313131"/>
+    <SolidColorBrush x:Key="BorderColor1" Color="Gray"/>
     <SolidColorBrush x:Key="BorderColor2" Color="#FF444444"/>
     <SolidColorBrush x:Key="MouseOverColor1" Color="#FF0262D6"/>
     <SolidColorBrush x:Key="PressedColor" Color="#FF2778A0"/>

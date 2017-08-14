@@ -195,7 +195,7 @@ namespace OpenShade.Classes
 
             if (type == typeof(Tweak) || type == typeof(PostProcess))
             {
-                foreach (var effect in effectList.Values)
+                foreach (var effect in effectList)
                 {
                     hash += effect.name;
                     hash += effect.isEnabled.ToString();
@@ -212,7 +212,7 @@ namespace OpenShade.Classes
             }
             else if (type == typeof(CustomTweak))
             {
-                foreach (var effect in effectList.Values)
+                foreach (var effect in effectList)
                 {
                     hash += effect.name;
                     hash += effect.shaderFile;
@@ -221,9 +221,7 @@ namespace OpenShade.Classes
                     hash += effect.newCode;
                     hash += effect.isEnabled.ToString();
                 }                
-            }
-
-           
+            }          
                         
             return hash;
         }        

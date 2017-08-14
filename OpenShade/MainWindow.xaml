@@ -164,7 +164,7 @@
                     <Separator/>
                     <Grid Margin="10">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="360"/>
+                            <ColumnDefinition Width="450"/>
                             <ColumnDefinition Width="100*"/>
                             </Grid.ColumnDefinitions>
                         <UniformGrid x:Name="TweakStack" Grid.Column="0" Columns="2"/>
@@ -207,7 +207,7 @@
                         <Separator/>
                         <Grid Margin="10">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="360"/>
+                                <ColumnDefinition Width="450"/>
                                 <ColumnDefinition Width="100*"/>
                             </Grid.ColumnDefinitions>
                             <UniformGrid x:Name="PostProcessStack" Grid.Column="0" Columns="2"/>

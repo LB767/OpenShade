@@ -13,6 +13,7 @@ using System.Windows.Documents;
 using System.Windows.Media;
 using System.Diagnostics;
 using System.Windows.Controls.Primitives;
+using System.Collections.ObjectModel;
 
 namespace OpenShade
 {
@@ -30,9 +31,9 @@ namespace OpenShade
         string postProcessesHash;
         string commentHash; // that's just the original comments
 
-        Dictionary<string, Tweak> tweaks;
-        Dictionary<string, CustomTweak> customTweaks;
-        Dictionary<string, PostProcess> postProcesses;
+        ObservableCollection<Tweak> tweaks;
+        ObservableCollection<CustomTweak> customTweaks;
+        ObservableCollection<PostProcess> postProcesses;
         string comment;
 
         const string P3DRegistryPath = "HKEY_LOCAL_MACHINE\\SOFTWARE\\Lockheed Martin\\Prepar3D v4";
@@ -55,16 +56,16 @@ namespace OpenShade
 
             Log_RichTextBox.Document.Blocks.Clear();
 
-            tweaks = new Dictionary<string, Tweak>() { };
-            customTweaks = new Dictionary<string, CustomTweak>() { };
-            postProcesses = new Dictionary<string, PostProcess>() { };
+            tweaks = new ObservableCollection<Tweak>() { };
+            customTweaks = new ObservableCollection<CustomTweak>() { };
+            postProcesses = new ObservableCollection<PostProcess>() { };
 
             Tweak.GenerateTweaksData(tweaks);
             PostProcess.GeneratePostProcessData(postProcesses);
 
-            Tweak_List.ItemsSource = tweaks.Values.ToList();
-            CustomTweak_List.ItemsSource = customTweaks.Values.ToList();
-            PostProcess_List.ItemsSource = postProcesses.Values.ToList();
+            Tweak_List.ItemsSource = tweaks;
+            CustomTweak_List.ItemsSource = customTweaks;
+            PostProcess_List.ItemsSource = postProcesses;
 
             CollectionView tweaksView = (CollectionView)CollectionViewSource.GetDefaultView(Tweak_List.ItemsSource);
             PropertyGroupDescription groupDescription = new PropertyGroupDescription("category");
@@ -223,7 +224,7 @@ namespace OpenShade
         {
             if (AddCustomTweak_TextBox.Text != "")
             {
-                customTweaks.Add("CUSTOM_TWEAK" + (customTweaks.Count).ToString(), new CustomTweak(AddCustomTweak_TextBox.Text, FileIO.cloudFile, customTweaks.Count, "", "", false));
+                customTweaks.Add(new CustomTweak("CUSTOM_TWEAK" + (customTweaks.Count).ToString(), AddCustomTweak_TextBox.Text, FileIO.cloudFile, customTweaks.Count, "", "", false));
                 CustomTweak_List.SelectedIndex = customTweaks.Count - 1;
                 CustomTweak_List.ScrollIntoView(CustomTweak_List.SelectedItem);
                 AddCustomTweak_TextBox.Text = "";
@@ -237,8 +238,8 @@ namespace OpenShade
             if (CustomTweak_List.SelectedItem != null)
             {
                 CustomTweak selectedTweak = (CustomTweak)CustomTweak_List.SelectedItem;
-                var item = customTweaks.First(p => p.Value == selectedTweak); // Not the best
-                customTweaks.Remove(item.Key);
+                var item = customTweaks.First(p => p == selectedTweak); // Not the best
+                customTweaks.Remove(item);
                 CustomTweak_List.Items.Refresh();
             }
         }
@@ -328,25 +329,31 @@ namespace OpenShade
                             var container = new StackPanel();
                             container.Orientation = Orientation.Horizontal;
 
-                            var Rtext = new TextBox();
+                            var Rtext = new NumericSpinner();
                             Rtext.Uid = param.id + "_R";
                             Rtext.Height = 25;
-                            Rtext.Width = 50;
-                            Rtext.Text = param.value.Split(',')[0];
+                            Rtext.Width = 70;
+                            Rtext.Value = decimal.Parse(param.value.Split(',')[0]);
+                            Rtext.MinValue = param.min;
+                            Rtext.MaxValue = param.max;
                             Rtext.LostFocus += new RoutedEventHandler(RGB_LostFocus);
 
-                            var Gtext = new TextBox();
+                            var Gtext = new NumericSpinner();
                             Gtext.Uid = param.id + "_G";
                             Gtext.Height = 25;
-                            Gtext.Width = 50;
-                            Gtext.Text = param.value.Split(',')[1];
+                            Gtext.Width = 70;
+                            Gtext.Value = decimal.Parse(param.value.Split(',')[1]);
+                            Gtext.MinValue = param.min;
+                            Gtext.MaxValue = param.max;
                             Gtext.LostFocus += new RoutedEventHandler(RGB_LostFocus);
 
-                            var Btext = new TextBox();
+                            var Btext = new NumericSpinner();
                             Btext.Uid = param.id + "_B";
                             Btext.Height = 25;
-                            Btext.Width = 50;
-                            Btext.Text = param.value.Split(',')[2];
+                            Btext.Width = 70;
+                            Btext.Value = decimal.Parse(param.value.Split(',')[2]);
+                            Btext.MinValue = param.min;
+                            Btext.MaxValue = param.max;
                             Btext.LostFocus += new RoutedEventHandler(RGB_LostFocus);
 
                             container.Children.Add(Rtext);
@@ -530,12 +537,12 @@ namespace OpenShade
 
         private void RGB_LostFocus(object sender, EventArgs e)
         {
-            TextBox senderTextBox = (TextBox)sender;
+            NumericSpinner spinner = (NumericSpinner)sender;
 
-            string uid = senderTextBox.Uid.Split('_')[0];
-            string channel = senderTextBox.Uid.Split('_')[1];
+            string uid = spinner.Uid.Split('_')[0];
+            string channel = spinner.Uid.Split('_')[1];
 
-            TabItem currentTab = HelperFunctions.FindAncestorOrSelf<TabItem>(senderTextBox);
+            TabItem currentTab = HelperFunctions.FindAncestorOrSelf<TabItem>(spinner);
             Parameter param = null;
 
             switch (currentTab.Header.ToString())
@@ -556,13 +563,13 @@ namespace OpenShade
             switch (channel)
             {
                 case "R":
-                    param.value = senderTextBox.Text + "," + oldG + "," + oldB;
+                    param.value = spinner.Value.ToString() + "," + oldG + "," + oldB;
                     break;
                 case "G":
-                    param.value = oldR + "," + senderTextBox.Text + "," + oldB;
+                    param.value = oldR + "," + spinner.Value.ToString() + "," + oldB;
                     break;
                 case "B":
-                    param.value = oldR + "," + oldG + "," + senderTextBox.Text;
+                    param.value = oldR + "," + oldG + "," + spinner.Value.ToString();
                     break;
             }
         }
@@ -626,10 +633,10 @@ namespace OpenShade
         {
             foreach (var tweak in tweaks)
             {
-                tweak.Value.isEnabled = false;
-                if (tweak.Value.parameters != null)
+                tweak.isEnabled = false;
+                if (tweak.parameters != null)
                 {
-                    foreach (var param in tweak.Value.parameters)
+                    foreach (var param in tweak.parameters)
                     {
                         param.value = param.defaultValue;
                     }
@@ -638,10 +645,10 @@ namespace OpenShade
 
             foreach (var post in postProcesses)
             {
-                post.Value.isEnabled = false;
-                if (post.Value.parameters != null)
+                post.isEnabled = false;
+                if (post.parameters != null)
                 {
-                    foreach (var param in post.Value.parameters)
+                    foreach (var param in post.parameters)
                     {
                         param.value = param.defaultValue;
                     }
@@ -701,6 +708,7 @@ namespace OpenShade
 
                 Tweak_List.Items.Refresh();
                 PostProcess_List.Items.Refresh();
+                CustomTweak_List.Items.Refresh();
 
                 Log(ErrorType.None, "Preset [" + presetName + "] loaded");
 
@@ -774,7 +782,7 @@ namespace OpenShade
             // NOTE: Not sure what is the best way to implement this... for now just handle each tweak on a case by case basis, which is a lot of code but fine for now
             // NOTE: This code is getting more awful by the minute           
 
-            foreach (var tweak in tweaks.Values)
+            foreach (var tweak in tweaks)
             {
                 if (tweak.isEnabled)
                 {
@@ -948,7 +956,7 @@ namespace OpenShade
                             currentFile = FileIO.funclibFile;
 
                             string rayleighString = "";
-                            Tweak rayleigh = tweaks.Values.First(p => p.name == "Rayleigh scattering effect");
+                            Tweak rayleigh = tweaks.First(p => p.name == "Rayleigh scattering effect");
                             if (rayleigh.isEnabled)
                             {
                                 rayleighString = "&&& ADD THE RAYLEIGH TWEAK HERE &&&";
@@ -1087,7 +1095,7 @@ namespace OpenShade
                 }
             }
 
-            foreach (CustomTweak custom in customTweaks.Values)
+            foreach (CustomTweak custom in customTweaks)
             {
                 if (custom.isEnabled)
                 {
@@ -1137,7 +1145,7 @@ namespace OpenShade
             }
 
 
-            if (postProcesses.Any(p => p.Value.isEnabled == true))
+            if (postProcesses.Any(p => p.isEnabled == true))
             { // if at least one effect is applied
                 bool success = false;
                 HDRText = HDRText.ReplaceAll(ref success, "return float4(finalColor, 1.0f);", "float4 EndColor = float4(finalColor.rgb, 1);\r\nreturn EndColor;");
@@ -1148,7 +1156,7 @@ namespace OpenShade
                 }
             }
 
-            foreach (PostProcess post in postProcesses.Values)
+            foreach (PostProcess post in postProcesses)
             {
                 if (post.isEnabled)
                 {
@@ -1618,9 +1626,9 @@ float3 blur_ori;
         {
             foreach (var tweak in tweaks)
             {
-                if (tweak.Value.parameters != null)
+                if (tweak.parameters != null)
                 {
-                    foreach (var param in tweak.Value.parameters)
+                    foreach (var param in tweak.parameters)
                     {
                         param.value = param.defaultValue;
                     }
@@ -1629,9 +1637,9 @@ float3 blur_ori;
 
             foreach (var post in postProcesses)
             {
-                if (post.Value.parameters != null)
+                if (post.parameters != null)
                 {
-                    foreach (var param in post.Value.parameters)
+                    foreach (var param in post.parameters)
                     {
                         param.value = param.defaultValue;
                     }
