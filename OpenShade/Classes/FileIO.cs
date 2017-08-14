@@ -307,6 +307,16 @@ namespace OpenShade.Classes
                         case "Main_Height":
                             mainWindowHandle.Height = double.Parse(parts[1].Trim());
                             break;
+
+                        case "Col1_Width":
+                            mainWindowHandle.Tweaks_Grid.ColumnDefinitions[0].Width = new GridLength(double.Parse(parts[1].Trim()));
+                            break;
+                        case "Col2_Width":
+                            mainWindowHandle.Post_Grid.ColumnDefinitions[0].Width = new GridLength(double.Parse(parts[1].Trim()));
+                            break;
+                        case "Col3_Width":
+                            mainWindowHandle.Custom_Grid.ColumnDefinitions[0].Width = new GridLength(double.Parse(parts[1].Trim()));
+                            break;
                     }
                 }
                 else
@@ -324,6 +334,9 @@ namespace OpenShade.Classes
             lines.Add("Theme, " + ((App)Application.Current).CurrentTheme.ToString());
             lines.Add("Main_Width, " + mainWindowHandle.Width.ToString());
             lines.Add("Main_Height, " + mainWindowHandle.Height.ToString());
+            lines.Add("Col1_Width, " + mainWindowHandle.Tweaks_Grid.ColumnDefinitions[0].Width.ToString());
+            lines.Add("Col2_Width, " + mainWindowHandle.Post_Grid.ColumnDefinitions[0].Width.ToString());
+            lines.Add("Col3_Width, " + mainWindowHandle.Custom_Grid.ColumnDefinitions[0].Width.ToString());
 
             try
             {

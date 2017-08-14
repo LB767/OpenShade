@@ -185,6 +185,6 @@ namespace OpenShade.Controls
             {
                 tb_main.Text = MinValue.ToString();
             }
-        }
+        }         
     }
 }

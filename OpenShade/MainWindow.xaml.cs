@@ -12,6 +12,7 @@ using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Media;
 using System.Diagnostics;
+using System.Windows.Controls.Primitives;
 
 namespace OpenShade
 {
@@ -24,11 +25,11 @@ namespace OpenShade
 
     public partial class MainWindow : Window
     {
-        int tweaksHash;
-        int customTweaksHash;
-        int postProcessesHash;
+        string tweaksHash;
+        string customTweaksHash;
+        string postProcessesHash;
         string commentHash; // that's just the original comments
-     
+
         Dictionary<string, Tweak> tweaks;
         Dictionary<string, CustomTweak> customTweaks;
         Dictionary<string, PostProcess> postProcesses;
@@ -61,13 +62,13 @@ namespace OpenShade
             Tweak.GenerateTweaksData(tweaks);
             PostProcess.GeneratePostProcessData(postProcesses);
 
-            Tweak_List.ItemsSource = tweaks.Values;
-            CustomTweak_List.ItemsSource = customTweaks.Values;
-            PostProcess_List.ItemsSource = postProcesses.Values;
+            Tweak_List.ItemsSource = tweaks.Values.ToList();
+            CustomTweak_List.ItemsSource = customTweaks.Values.ToList();
+            PostProcess_List.ItemsSource = postProcesses.Values.ToList();
 
             CollectionView tweaksView = (CollectionView)CollectionViewSource.GetDefaultView(Tweak_List.ItemsSource);
             PropertyGroupDescription groupDescription = new PropertyGroupDescription("category");
-            tweaksView.GroupDescriptions.Add(groupDescription);           
+            tweaksView.GroupDescriptions.Add(groupDescription);
 
             // Shaders files
             string P3DDirectory = (string)Registry.GetValue(@"HKEY_CURRENT_USER\Software\Lockheed Martin\Prepar3D v4", "AppPath", null);
@@ -129,7 +130,8 @@ namespace OpenShade
                             Log(ErrorType.None, "Shaders backed up");
                         }
                     }
-                    else {
+                    else
+                    {
                         Log(ErrorType.Warning, "Shaders were not backed up. OpenShade can not run.");
                         NewPreset_btn.IsEnabled = false;
                         OpenPreset_btn.IsEnabled = false;
@@ -162,7 +164,8 @@ namespace OpenShade
                 {
                     LoadPreset();
                 }
-                else {
+                else
+                {
                     Log(ErrorType.Error, "Active Preset file [" + presetName + "] not found");
                 }
             }
@@ -170,7 +173,10 @@ namespace OpenShade
 
         private void Window_Closed(object sender, EventArgs e) // important to use Closed() and not Closing() because this has to happen after any LostFocus() event to have all up-to-date parameters
         {
-            if (tweaks.GetDictHashCode() != tweaksHash || customTweaks.GetDictHashCode() != customTweaksHash || postProcesses.GetDictHashCode() != postProcessesHash || comment != commentHash)
+            if (HelperFunctions.GetDictHashCode(typeof(Tweak), tweaks) != tweaksHash ||
+                HelperFunctions.GetDictHashCode(typeof(CustomTweak), customTweaks) != customTweaksHash || 
+                HelperFunctions.GetDictHashCode(typeof(PostProcess), postProcesses) != postProcessesHash || 
+                comment != commentHash)
             {
                 MessageBoxResult result = MessageBox.Show("Some changes were not saved.\r\nWould you like to save them now?", "Save", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
                 if (result == MessageBoxResult.Yes)
@@ -186,116 +192,7 @@ namespace OpenShade
         #region MainTweaks
         private void TweakList_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (Tweak_List.SelectedItem != null)
-            {
-                ParameterStack.Children.Clear();
-                TweakClearStack.Children.Clear();
-
-                Tweak selectedTweak = (Tweak)Tweak_List.SelectedItem;
-                TweakTitleTextblock.Content = selectedTweak.name;
-                TweakDescriptionTextblock.Text = selectedTweak.description;
-
-                if (selectedTweak.parameters != null)
-                {
-                    ParameterStack.Rows = selectedTweak.parameters.Count();
-
-                    Button resetButton = new Button();
-                    resetButton.Content = "Reset";
-                    resetButton.ToolTip = "Reset parameters to their default value";
-                    resetButton.Width = 50;
-                    resetButton.Height = 25;
-                    resetButton.VerticalAlignment = VerticalAlignment.Top;
-                    resetButton.HorizontalAlignment = HorizontalAlignment.Right;
-                    resetButton.Click += new RoutedEventHandler(ResetParameters_Click);
-
-                    Grid.SetColumn(resetButton, 1);
-                    TweakClearStack.Children.Add(resetButton);                    
-
-                    foreach (Parameter param in selectedTweak.parameters)
-                    {
-
-                        TextBlock txtBlock = new TextBlock();
-                        txtBlock.Text = param.name;
-                        txtBlock.TextWrapping = TextWrapping.Wrap;
-                        txtBlock.Width = 170;
-                        txtBlock.Height = 30;
-                        txtBlock.Margin = new Thickness(0, 0, 10, 0);
-
-                        ParameterStack.Children.Add(txtBlock);
-
-                        if (param.control == UIType.Checkbox)
-                        {
-                            CheckBox checkbox = new CheckBox();
-                            checkbox.IsChecked = ((param.value == "1") ? true : false);
-                            checkbox.Uid = param.id;
-                            checkbox.VerticalAlignment = VerticalAlignment.Center;
-                            checkbox.Click += new RoutedEventHandler(Checkbox_Click);
-                            ParameterStack.Children.Add(checkbox);
-                        }
-                        else if (param.control == UIType.RGB)
-                        {
-                            var group = new GroupBox();
-                            group.Header = "RGB";
-
-                            var container = new StackPanel();
-                            container.Orientation = Orientation.Horizontal;
-
-                            var Rtext = new TextBox();
-                            Rtext.Uid = param.id + "_R";
-                            Rtext.Height = 25;
-                            Rtext.Width = 50;
-                            Rtext.Text = param.value.Split(',')[0];
-                            Rtext.LostFocus += new RoutedEventHandler(RGB_LostFocus);
-
-                            var Gtext = new TextBox();
-                            Gtext.Uid = param.id + "_G";
-                            Gtext.Height = 25;
-                            Gtext.Width = 50;
-                            Gtext.Text = param.value.Split(',')[1];
-                            Gtext.LostFocus += new RoutedEventHandler(RGB_LostFocus);
-
-                            var Btext = new TextBox();
-                            Btext.Uid = param.id + "_B";
-                            Btext.Height = 25;
-                            Btext.Width = 50;
-                            Btext.Text = param.value.Split(',')[2];
-                            Btext.LostFocus += new RoutedEventHandler(RGB_LostFocus);
-
-                            container.Children.Add(Rtext);
-                            container.Children.Add(Gtext);
-                            container.Children.Add(Btext);
-
-                            group.Content = container;
-
-                            ParameterStack.Children.Add(group);
-                        }
-
-                        else if (param.control == UIType.Text)
-                        {
-                            //var spinner = new NumericSpinner();
-                            var spinner = new TextBox();
-                            spinner.Uid = param.id;
-                            spinner.Height = 25;
-                            spinner.Text = param.value;
-                            //spinner.Decimals = 10;
-                            //spinner.MinValue = Convert.ToDecimal(param.min);
-                            //spinner.MaxValue = Convert.ToDecimal(param.max);
-                            //spinner.Value = Convert.ToDecimal(param.value);
-                            //spinner.Step = Convert.ToDecimal((param.max - param.min) / 10); // TODO: Make something better
-
-                            spinner.LostFocus += new RoutedEventHandler(ParameterText_LostFocus);
-
-                            ParameterStack.Children.Add(spinner);
-                        }
-                    }
-                }
-                else
-                {
-                    Label label = new Label();
-                    label.Content = "No additional parameters";
-                    ParameterStack.Children.Add(label);
-                }
-            }
+            List_SelectionChanged(typeof(Tweak), Tweak_List, TweakStack, TweakClearStack, TweakTitleTextblock, TweakDescriptionTextblock);
         }
         #endregion
 
@@ -316,7 +213,8 @@ namespace OpenShade
                 CustomTweakNewCode_RichTextBox.Document.Blocks.Clear();
                 CustomTweakNewCode_RichTextBox.Document.Blocks.Add(new Paragraph(new Run(selectedTweak.newCode)));
             }
-            else {
+            else
+            {
                 CustomTweaks_Grid.Visibility = Visibility.Collapsed;
             }
         }
@@ -337,14 +235,14 @@ namespace OpenShade
         private void DeleteCustomTweak(object sender, RoutedEventArgs e)
         {
             if (CustomTweak_List.SelectedItem != null)
-            {                
+            {
                 CustomTweak selectedTweak = (CustomTweak)CustomTweak_List.SelectedItem;
                 var item = customTweaks.First(p => p.Value == selectedTweak); // Not the best
                 customTweaks.Remove(item.Key);
                 CustomTweak_List.Items.Refresh();
             }
         }
-        
+
         private void ShaderFile_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             Debug.Assert(CustomTweak_List.SelectedItem != null);
@@ -355,22 +253,39 @@ namespace OpenShade
         }
         #endregion
 
-        #region PostProcesses
-        // TODO: This should probably be merged somewhat with TweakList_SelectionChanged() since it's basically the same thing
+        #region PostProcesses        
         private void PostProcessList_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (PostProcess_List.SelectedItem != null)
+            List_SelectionChanged(typeof(PostProcess), PostProcess_List, PostProcessStack, PostClearStack, PostTitleTextblock, PostDescriptionTextblock);
+        }
+        #endregion
+
+        #region ParametersUpdates
+        private void List_SelectionChanged(Type type, ListView itemListview, UniformGrid StackGrid, StackPanel clearStack, Label titleBlock, TextBlock descriptionBlock)
+        {
+            if (itemListview.SelectedItem != null)
             {
-                PostProcessStack.Children.Clear();
-                PostClearStack.Children.Clear();
+                StackGrid.Children.Clear();
+                clearStack.Children.Clear();
 
-                PostProcess selectedPost = (PostProcess)PostProcess_List.SelectedItem;
-                PostTitleTextblock.Content = selectedPost.name;
-                PostDescriptionTextblock.Text = selectedPost.description;
+                // oh dear, starting to do JS crap, that is nasty
+                // TODO: Make a common class type tweak so then basetweak and postprocess should inherit it so I don't have to do this dynamic insanity
+                dynamic selectedEffect;
 
-                if (selectedPost.parameters != null)
+                if (type == typeof(Tweak))
                 {
-                    PostProcessStack.Rows = selectedPost.parameters.Count();
+                    selectedEffect = (Tweak)itemListview.SelectedItem;
+                }
+                else {
+                    selectedEffect = (PostProcess)itemListview.SelectedItem;
+                }
+
+                titleBlock.Content = selectedEffect.name;
+                descriptionBlock.Text = selectedEffect.description;
+
+                if (selectedEffect.parameters != null)
+                {
+                    StackGrid.Rows = selectedEffect.parameters.Count;
 
                     Button resetButton = new Button();
                     resetButton.Content = "Reset";
@@ -382,10 +297,11 @@ namespace OpenShade
                     resetButton.Click += new RoutedEventHandler(ResetParameters_Click);
 
                     Grid.SetColumn(resetButton, 1);
-                    PostClearStack.Children.Add(resetButton);                    
+                    clearStack.Children.Add(resetButton);
 
-                    foreach (Parameter param in selectedPost.parameters)
+                    foreach (Parameter param in selectedEffect.parameters)
                     {
+
                         TextBlock txtBlock = new TextBlock();
                         txtBlock.Text = param.name;
                         txtBlock.TextWrapping = TextWrapping.Wrap;
@@ -393,15 +309,16 @@ namespace OpenShade
                         txtBlock.Height = 30;
                         txtBlock.Margin = new Thickness(0, 0, 10, 0);
 
-                        PostProcessStack.Children.Add(txtBlock);
+                        StackGrid.Children.Add(txtBlock);
 
                         if (param.control == UIType.Checkbox)
                         {
                             CheckBox checkbox = new CheckBox();
                             checkbox.IsChecked = ((param.value == "1") ? true : false);
                             checkbox.Uid = param.id;
+                            checkbox.VerticalAlignment = VerticalAlignment.Center;
                             checkbox.Click += new RoutedEventHandler(Checkbox_Click);
-                            PostProcessStack.Children.Add(checkbox);
+                            StackGrid.Children.Add(checkbox);
                         }
                         else if (param.control == UIType.RGB)
                         {
@@ -438,25 +355,59 @@ namespace OpenShade
 
                             group.Content = container;
 
-                            PostProcessStack.Children.Add(group);
+                            StackGrid.Children.Add(group);
                         }
 
                         else if (param.control == UIType.Text)
                         {
-                            //var spinner = new NumericSpinner();
-                            var spinner = new TextBox();
+                            var spinner = new NumericSpinner();
                             spinner.Uid = param.id;
                             spinner.Height = 25;
-                            spinner.Text = param.value;
-                            //spinner.Decimals = 10;
-                            //spinner.MinValue = Convert.ToDecimal(param.min);
-                            //spinner.MaxValue = Convert.ToDecimal(param.max);
-                            //spinner.Value = Convert.ToDecimal(param.value);
-                            //spinner.Step = Convert.ToDecimal((param.max - param.min) / 10); // TODO: Make something better
+                            spinner.Decimals = 10;
+                            spinner.MinValue = param.min;
+                            spinner.MaxValue = param.max;
+                            spinner.Step = 0.1m;
+                            spinner.LostFocus += new RoutedEventHandler(ParameterSpinner_LostFocus);
 
-                            spinner.LostFocus += new RoutedEventHandler(ParameterText_LostFocus);
+                            var item = new MenuItem();
+                            item.Header = "Make Custom";
+                            item.Foreground = (Brush)FindResource("TextColor");
+                            item.Tag = spinner;
+                            item.Click += ParameterSwitch_Click;
+                            spinner.ContextMenu = new ContextMenu();
+                            spinner.ContextMenu.Items.Add(item);
 
-                            PostProcessStack.Children.Add(spinner);
+
+                            var txtbox = new TextBox();
+                            txtbox.Uid = param.id;
+                            txtbox.Height = 50;
+                            txtbox.VerticalContentAlignment = VerticalAlignment.Top;
+                            //spinner.TextWrapping = TextWrapping.Wrap;
+                            txtbox.Text = param.value;
+                            txtbox.LostFocus += new RoutedEventHandler(ParameterText_LostFocus);
+
+                            item = new MenuItem();
+                            item.Header = "Make Default";
+                            item.Foreground = (Brush)FindResource("TextColor");
+                            item.Tag = txtbox;
+                            item.Click += ParameterSwitch_Click;
+                            txtbox.ContextMenu = new ContextMenu();
+                            txtbox.ContextMenu.Items.Add(item);
+
+                            decimal val;
+                            if (decimal.TryParse(param.value, out val))
+                            {
+                                spinner.Value = val;
+                                txtbox.Visibility = Visibility.Collapsed;
+                            }
+                            else
+                            {
+                                spinner.Value = decimal.Parse(param.defaultValue);
+                                spinner.Visibility = Visibility.Collapsed;
+                            }
+
+                            StackGrid.Children.Add(spinner);
+                            StackGrid.Children.Add(txtbox);
                         }
                     }
                 }
@@ -464,13 +415,11 @@ namespace OpenShade
                 {
                     Label label = new Label();
                     label.Content = "No additional parameters";
-                    ParameterStack.Children.Add(label);
+                    StackGrid.Children.Add(label);
                 }
             }
         }
-        #endregion
 
-        #region ParametersUpdates
         private void Checkbox_Click(object sender, EventArgs e)
         {
             CheckBox checkbox = (CheckBox)sender;
@@ -500,30 +449,83 @@ namespace OpenShade
 
         private void ParameterText_LostFocus(object sender, EventArgs e)
         {
-            TextBox spinner = (TextBox)sender;
-            TabItem currentTab = HelperFunctions.FindAncestorOrSelf<TabItem>(spinner);
-            ListView currentList = null;
+            TextBox txtBox = (TextBox)sender;
+            TabItem currentTab = HelperFunctions.FindAncestorOrSelf<TabItem>(txtBox);            
             Parameter param = null;
 
             switch (currentTab.Header.ToString())
             {
                 case "Tweaks":
-                    param = ((Tweak)Tweak_List.SelectedItem).parameters.First(p => p.id == spinner.Uid);
-                    currentList = Tweak_List;
+                    param = ((Tweak)Tweak_List.SelectedItem).parameters.First(p => p.id == txtBox.Uid);                    
                     break;
 
                 case "Post Process":
-                    param = ((PostProcess)PostProcess_List.SelectedItem).parameters.First(p => p.id == spinner.Uid);
-                    currentList = PostProcess_List;
+                    param = ((PostProcess)PostProcess_List.SelectedItem).parameters.First(p => p.id == txtBox.Uid);                   
                     break;
 
                 case "Custom": // NOTE: Maybe unify this to behave like tweaks and post-processes                    
-                    ((CustomTweak)CustomTweak_List.SelectedItem).name = spinner.Text;
-                    currentList = CustomTweak_List;
-                    break; 
+                    ((CustomTweak)CustomTweak_List.SelectedItem).name = txtBox.Text;                    
+                    break;
             }
 
-            if (currentTab.Header.ToString() != "Custom") { param.value = spinner.Text; }
+            if (currentTab.Header.ToString() != "Custom") { param.value = txtBox.Text; }
+        }
+
+        private void ParameterSpinner_LostFocus(object sender, EventArgs e)
+        {
+            NumericSpinner spinner = (NumericSpinner)sender;
+            TabItem currentTab = HelperFunctions.FindAncestorOrSelf<TabItem>(spinner);
+            Parameter param = null;
+
+            switch (currentTab.Header.ToString())
+            {
+                case "Tweaks":
+                    param = ((Tweak)Tweak_List.SelectedItem).parameters.First(p => p.id == spinner.Uid);                    
+                    break;
+
+                case "Post Process":
+                    param = ((PostProcess)PostProcess_List.SelectedItem).parameters.First(p => p.id == spinner.Uid);                    
+                    break;
+            }
+
+            if (currentTab.Header.ToString() != "Custom") { param.value = spinner.Value.ToString(); }
+        }
+
+        private void ParameterSwitch_Click(object sender, EventArgs e)
+        {
+            MenuItem item = (MenuItem)sender;
+
+            TabItem currentTab = HelperFunctions.FindAncestorOrSelf<TabItem>((DependencyObject)item.Tag);
+            UniformGrid currentStack = null;
+
+            switch (currentTab.Header.ToString())
+            {
+                case "Tweaks":
+                    currentStack = TweakStack;
+                    break;
+
+                case "Post Process":
+                    currentStack = PostProcessStack;
+                    break;
+            }
+
+            if (item.Tag.GetType() == typeof(NumericSpinner))
+            {
+                NumericSpinner control = (NumericSpinner)item.Tag;
+                int index = currentStack.Children.IndexOf(control);
+
+                control.Visibility = Visibility.Collapsed;
+                currentStack.Children[index + 1].Visibility = Visibility.Visible;
+            }
+
+            else if (item.Tag.GetType() == typeof(TextBox))
+            {
+                TextBox control = (TextBox)item.Tag;
+                int index = currentStack.Children.IndexOf(control);
+
+                control.Visibility = Visibility.Collapsed;
+                currentStack.Children[index - 1].Visibility = Visibility.Visible;
+            }
         }
 
         private void RGB_LostFocus(object sender, EventArgs e)
@@ -567,7 +569,7 @@ namespace OpenShade
 
         private void RichTextBox_LostFocus(object sender, EventArgs e)
         {
-            RichTextBox rich = (RichTextBox)sender;            
+            RichTextBox rich = (RichTextBox)sender;
 
             switch (rich.Name)
             {
@@ -578,7 +580,7 @@ namespace OpenShade
                 case "CustomTweakNewCode_RichTextBox":
                     ((CustomTweak)CustomTweak_List.SelectedItem).newCode = new TextRange(CustomTweakNewCode_RichTextBox.Document.ContentStart, CustomTweakNewCode_RichTextBox.Document.ContentEnd).Text;
                     break;
-            }                   
+            }
         }
 
         private void ResetParameters_Click(object sender, EventArgs e)
@@ -604,7 +606,7 @@ namespace OpenShade
                         param.value = param.defaultValue;
                     }
                     PostProcessList_SelectionChanged(null, null);
-                    break;             
+                    break;
             }
         }
         #endregion
@@ -637,7 +639,8 @@ namespace OpenShade
             foreach (var post in postProcesses)
             {
                 post.Value.isEnabled = false;
-                if (post.Value.parameters != null) { 
+                if (post.Value.parameters != null)
+                {
                     foreach (var param in post.Value.parameters)
                     {
                         param.value = param.defaultValue;
@@ -691,9 +694,9 @@ namespace OpenShade
                 fileData.LoadPostProcesses(postProcesses, pref);
                 PresetComments_TextBox.Text = fileData.LoadComments(pref);
 
-                tweaksHash = tweaks.GetDictHashCode();
-                customTweaksHash = customTweaks.GetDictHashCode();
-                postProcessesHash = postProcesses.GetDictHashCode();
+                tweaksHash = HelperFunctions.GetDictHashCode(typeof(Tweak), tweaks);
+                customTweaksHash = HelperFunctions.GetDictHashCode(typeof(CustomTweak), customTweaks);
+                postProcessesHash = HelperFunctions.GetDictHashCode(typeof(PostProcess), postProcesses);
                 commentHash = comment;
 
                 Tweak_List.Items.Refresh();
@@ -716,9 +719,9 @@ namespace OpenShade
                 comment = PresetComments_TextBox.Text;
                 fileData.SavePreset(presetPath, tweaks, customTweaks, postProcesses, comment, pref);
 
-                tweaksHash = tweaks.GetDictHashCode();
-                customTweaksHash = customTweaks.GetDictHashCode();
-                postProcessesHash = postProcesses.GetDictHashCode();
+                tweaksHash = HelperFunctions.GetDictHashCode(typeof(Tweak), tweaks);
+                customTweaksHash = HelperFunctions.GetDictHashCode(typeof(CustomTweak), customTweaks);
+                postProcessesHash = HelperFunctions.GetDictHashCode(typeof(PostProcess), postProcesses);
                 commentHash = comment;
 
                 Log(ErrorType.None, "Preset [" + presetName + "] saved in " + presetPath);
@@ -748,9 +751,9 @@ namespace OpenShade
                     comment = PresetComments_TextBox.Text;
                     fileData.SavePreset(presetPath, tweaks, customTweaks, postProcesses, comment, pref);
 
-                    tweaksHash = tweaks.GetDictHashCode();
-                    customTweaksHash = customTweaks.GetDictHashCode();
-                    postProcessesHash = postProcesses.GetDictHashCode();
+                    tweaksHash = HelperFunctions.GetDictHashCode(typeof(Tweak), tweaks);
+                    customTweaksHash = HelperFunctions.GetDictHashCode(typeof(CustomTweak), customTweaks);
+                    postProcessesHash = HelperFunctions.GetDictHashCode(typeof(PostProcess), postProcesses);
                     commentHash = comment;
 
                     Log(ErrorType.None, "Preset [" + presetName + "] saved in " + presetPath);
@@ -804,7 +807,7 @@ namespace OpenShade
                             break;
 
                         case "Cloud light scattering":
-                            currentFile = FileIO.cloudFile;                           
+                            currentFile = FileIO.cloudFile;
                             cloudText = cloudText.CommentOut(ref success, "if (fIntensity < -cb_mMedianLine)", "    fIntensity = clamp(fIntensity, 0, 1);", false);
                             cloudText = cloudText.AddBefore(ref success, "/*if (fIntensity < -cb_mMedianLine)", "fIntensity =  saturate(" + tweak.parameters[0].value.ToString() + " * fIntensity + " + tweak.parameters[1].value.ToString() + ");\r\n");
 
@@ -1073,7 +1076,8 @@ namespace OpenShade
                     {
                         Log(ErrorType.Error, "Failed to apply tweak [" + tweak.name + "] in " + currentFile + " file.");
                     }
-                    else if (!success && !supported) {
+                    else if (!success && !supported)
+                    {
                         Log(ErrorType.Warning, "Did not apply tweak [" + tweak.name + "] in " + currentFile + " file. Tweak is not upported.");
                     }
                     else
@@ -1396,7 +1400,7 @@ const float3 Vibrance_RGB_balance = float3({post.parameters[1].value});
                             HDRText = HDRText.AddBefore(ref success, "return EndColor;", "EndColor = VibranceMain(vert, EndColor);\r\n");
                             break;
 
-                          case "Cineon DPX":
+                        case "Cineon DPX":
                             HDRText = HDRText.AddBefore(ref success, "// Applies exposure and tone mapping to the input, and combines it with the",
 $@"float4 DPXMain(PsQuad vert, float4 Inp_color) : SV_Target
 {{
@@ -1604,14 +1608,16 @@ float3 blur_ori;
 
         private void ResetShaderFiles(object sender, RoutedEventArgs e)
         {
-            if (fileData.CopyShaderFiles(backupDirectory, shaderDirectory)) { 
+            if (fileData.CopyShaderFiles(backupDirectory, shaderDirectory))
+            {
                 Log(ErrorType.None, "Shader files restored");
-            }            
+            }
         }
 
         private void ResetSettings_Click(object sender, RoutedEventArgs e)
         {
-            foreach (var tweak in tweaks) {
+            foreach (var tweak in tweaks)
+            {
                 if (tweak.Value.parameters != null)
                 {
                     foreach (var param in tweak.Value.parameters)
@@ -1633,7 +1639,8 @@ float3 blur_ori;
             }
         }
 
-        private void ClearShaders_Click(object sender, RoutedEventArgs e) {
+        private void ClearShaders_Click(object sender, RoutedEventArgs e)
+        {
             try
             {
                 fileData.ClearDirectory(cacheDirectory);

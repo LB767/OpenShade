@@ -54,8 +54,8 @@ namespace OpenShade.Classes
         public string description;
         public string value;       
         public string defaultValue;
-        public double min;
-        public double max;
+        public decimal min;
+        public decimal max;
         public UIType control;
 
         public Parameter() { }
@@ -67,8 +67,8 @@ namespace OpenShade.Classes
             description = Descr;
             value = Val;
             defaultValue = Default;
-            min = Min;
-            max = Max;
+            min = Convert.ToDecimal(Min);
+            max = Convert.ToDecimal(Max);
             control = Control;
         }
 
@@ -80,8 +80,8 @@ namespace OpenShade.Classes
             description = Descr;
             value = Convert.ToDecimal(Val).ToString();
             defaultValue = Convert.ToDecimal(Default).ToString();
-            min = Min;
-            max = Max;
+            min = Convert.ToDecimal(Min);
+            max = Convert.ToDecimal(Max);
             control = Control;
         }
 
@@ -93,21 +93,11 @@ namespace OpenShade.Classes
             description = Descr;
             value = Val.GetString();
             defaultValue = Default.GetString();
-            min = Min;
-            max = Max;
+            min = Convert.ToDecimal(Min);
+            max = Convert.ToDecimal(Max);
             control = Control;
         }
-
-        public override int GetHashCode()
-        {
-            unchecked // Overflow is fine, just wrap
-            {
-                int hash = 17;
-                hash = hash * 29 + name.GetHashCode();
-                hash = hash * 29 + value.GetHashCode();
-                return hash;
-            }
-        }
+    
     }
 
     public class Tweak : INotifyPropertyChanged
@@ -316,16 +306,9 @@ namespace OpenShade.Classes
 
         }
 
-        public override int GetHashCode()
-        {
-            unchecked // Overflow is fine, just wrap
-            {
-                int hash = 17;
-                hash = hash * 29 + name.GetHashCode();
-                hash = hash * 29 + _isEnabled.GetHashCode();
-                return hash;
-            }
-        }
+        // @BUG FIX ME FIX ME FIX ME TODO: this breaks selection beahviour in listviews because the selector is based on hases
+        // One fix is to remove-add the item with the new has, which is kinda pointless...
+        // Otherwise I have to find another way of checking for settings changes...
 
         public event PropertyChangedEventHandler PropertyChanged;
     }
@@ -356,21 +339,6 @@ namespace OpenShade.Classes
             oldCode = OldCode;
             newCode = NewCode;
             isEnabled = IsOn;
-        }
-
-        public override int GetHashCode()
-        {
-            unchecked // Overflow is fine, just wrap
-            {
-                int hash = 17;
-                hash = hash * 29 + name.GetHashCode();
-                hash = hash * 29 + shaderFile.GetHashCode();
-                hash = hash * 29 + index.GetHashCode();
-                hash = hash * 29 + oldCode.GetHashCode();
-                hash = hash * 29 + newCode.GetHashCode();
-                hash = hash * 29 + isEnabled.GetHashCode();
-                return hash;
-            }
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -455,18 +423,7 @@ namespace OpenShade.Classes
             postProcesses.Add("POSTPROCESS_SHADER LumaSharpen", newPost);
 
         }
-
-
-        public override int GetHashCode()
-        {
-            unchecked // Overflow is fine, just wrap
-            {
-                int hash = 17;
-                hash = hash * 29 + name.GetHashCode();
-                hash = hash * 29 + isEnabled.GetHashCode();
-                return hash;
-            }
-        }
+        
     }
 
 

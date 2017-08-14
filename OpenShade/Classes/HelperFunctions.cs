@@ -189,52 +189,44 @@ namespace OpenShade.Classes
 
 
 
-        public static int GetDictHashCode<TKey,TValue>(this IDictionary<TKey,TValue> sequence)
+        public static string GetDictHashCode(Type type, dynamic effectList) // TODO: Another dynamic, get rid of it at some point
         {
-            int hash = 0;
-            List<TValue> list = sequence.Values.ToList();
+            string hash = "";
 
-            foreach (var tval in list)
+            if (type == typeof(Tweak) || type == typeof(PostProcess))
             {
-                if (typeof(TValue) == typeof(Tweak))
+                foreach (var effect in effectList.Values)
                 {
-                    Tweak item = tval as Tweak;
-                    hash += item.GetHashCode();
-                    hash += item.parameters.GetSequenceHashCode();
+                    hash += effect.name;
+                    hash += effect.isEnabled.ToString();
+
+                    if (effect.parameters != null)
+                    {
+                        foreach (var param in effect.parameters)
+                        {
+                            hash += param.name;
+                            hash += param.value;
+                        }
+                    }
                 }
-                else if (typeof(TValue) == typeof(CustomTweak))
+            }
+            else if (type == typeof(CustomTweak))
+            {
+                foreach (var effect in effectList.Values)
                 {
-                    CustomTweak item = tval as CustomTweak;
-                    hash += item.GetHashCode();
-                    hash += item.GetHashCode();
-                }
-                else if (typeof(TValue) == typeof(PostProcess))
-                {
-                    PostProcess item = tval as PostProcess;
-                    hash += item.GetHashCode();
-                    hash += item.parameters.GetSequenceHashCode();
+                    hash += effect.name;
+                    hash += effect.shaderFile;
+                    hash += effect.index.ToString();
+                    hash += effect.oldCode;
+                    hash += effect.newCode;
+                    hash += effect.isEnabled.ToString();
                 }                
-            }           
+            }
 
+           
+                        
             return hash;
-        }
-
-
-        public static int GetSequenceHashCode<T>(this IList<T> sequence)
-        {
-            const int seed = 487;
-            const int modifier = 31;
-
-            if (sequence == null) {
-                return 0;
-            }
-
-            unchecked
-            {
-                return sequence.Aggregate(seed, (current, item) =>
-                    (current * modifier) + item.GetHashCode());
-            }
-        }
+        }        
     }
 
 }

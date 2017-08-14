@@ -115,7 +115,7 @@
 
         <TabControl Background="{DynamicResource WindowBackground}" Grid.Row="1" BorderThickness="0" x:Name="TabMain">
             <TabItem Header="Tweaks">
-                <Grid Margin="3,3,3,3">
+                <Grid x:Name="Tweaks_Grid" Margin="3,3,3,3">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="300" MinWidth="100"/>
                         <ColumnDefinition Width="Auto"/>
@@ -157,7 +157,7 @@
                     <GridSplitter Grid.Column="1" HorizontalAlignment="Stretch" Width="2"/>
 
                     <StackPanel Grid.Column="2" VerticalAlignment="Top" Margin="10,10,10,10" Width="Auto" Height="Auto">
-                        <Label x:Name="TweakTitleTextblock" Content="" FontWeight="Bold"/>
+                    <Label x:Name="TweakTitleTextblock" Content="" FontWeight="Bold"/>
                     <Separator/>
                     <TextBlock x:Name="TweakDescriptionTextblock" TextWrapping="Wrap" Height="100" Foreground="{DynamicResource TextColor}"/>
                     <Label Content="Parameters"/>
@@ -167,14 +167,14 @@
                             <ColumnDefinition Width="360"/>
                             <ColumnDefinition Width="100*"/>
                             </Grid.ColumnDefinitions>
-                        <UniformGrid x:Name="ParameterStack" Grid.Column="0" Columns="2"/>
+                        <UniformGrid x:Name="TweakStack" Grid.Column="0" Columns="2"/>
                         <StackPanel x:Name="TweakClearStack" Grid.Column="1"/>
                         </Grid>
                 </StackPanel>
             </Grid>
         </TabItem>
             <TabItem Header="Post Process">
-                <Grid Margin="3,3,3,3">
+                <Grid x:Name="Post_Grid" Margin="3,3,3,3">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="300" MinWidth="100"/>
                         <ColumnDefinition Width="Auto"/>
@@ -218,7 +218,7 @@
                 </Grid>
             </TabItem>
             <TabItem Header="Custom">
-                <Grid Margin="3,3,3,3">
+                <Grid x:Name="Custom_Grid" Margin="3,3,3,3">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="300" MinWidth="100"/>
                         <ColumnDefinition Width="Auto"/>
