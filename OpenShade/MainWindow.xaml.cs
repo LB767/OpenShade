@@ -822,7 +822,7 @@ namespace OpenShade
                             if (tweak.parameters[2].value == "1")
                             {
                                 cloudText = cloudText.CommentOut(ref success, "float height = corner.y;", "float4 color = lerp(baseColor, topColor, s);", true);
-                                cloudText = cloudText.ReplaceAll(ref success, "float4 colorIntensity = float4(fRed, fGreen, fBlue, saturate(alpha)) * color;", "float4 colorIntensity = float4(fRed, fGreen, fBlue, saturate(alpha));");
+                                cloudText = cloudText.ReplaceAll(ref success, "float4 colorIntensity = float4(fColor.r, fColor.g, fColor.b, saturate(alpha)) * color;", "float4 colorIntensity = float4(fRed, fGreen, fBlue, saturate(alpha));");
                             }
                             break;
 
