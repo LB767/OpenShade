@@ -3,7 +3,6 @@ using OpenShade.Controls;
 using OpenShade.Classes;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Windows;
@@ -36,7 +35,7 @@ namespace OpenShade
          * then it's enough for just the objects to raise change notifications (typically through INotifyPropertyChanged) and List<T> is sufficient. 
          * But if the list will contain different objects from time to time, or if the order changes, then you should use ObservableCollection<T>.
          */
-        ObservableCollection<Tweak> tweaks;
+        List<Tweak> tweaks;
         ObservableCollection<CustomTweak> customTweaks;
         List<PostProcess> postProcesses;
         string comment;
@@ -61,7 +60,7 @@ namespace OpenShade
 
             Log_RichTextBox.Document.Blocks.Clear();
 
-            tweaks = new ObservableCollection<Tweak>() { };
+            tweaks = new List<Tweak>() { };
             customTweaks = new ObservableCollection<CustomTweak>() { };
             postProcesses = new List<PostProcess>() { };
 
@@ -421,6 +420,22 @@ namespace OpenShade
                             StackGrid.Children.Add(spinner);
                             StackGrid.Children.Add(txtbox);
                         }
+
+                        else if (param.control == UIType.Combobox)
+                        {
+                            var combo = new ComboBox();
+                            combo.Uid = param.id;
+                            combo.Height = 25;
+                            combo.Foreground = (Brush)FindResource("TextColor");
+                            foreach (var item in param.range)
+                            {
+                                combo.Items.Add(item);
+                            }
+                            combo.SelectedIndex = int.Parse(param.value);
+                            combo.SelectionChanged += new SelectionChangedEventHandler(Combobox_SelectionChanged);
+
+                            StackGrid.Children.Add(combo);
+                        }
                     }
                 }
                 else
@@ -577,6 +592,30 @@ namespace OpenShade
                     param.value = oldR + "," + oldG + "," + spinner.Value.ToString();
                     break;
             }
+        }
+
+        private void Combobox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            ComboBox combo = (ComboBox)sender;
+            TabItem currentTab = HelperFunctions.FindAncestorOrSelf<TabItem>(combo);
+            Parameter param = null;
+
+            switch (currentTab.Header.ToString())
+            {
+                case "Tweaks":
+                    param = ((Tweak)Tweak_List.SelectedItem).parameters.First(p => p.id == combo.Uid);
+                    break;
+
+                case "Post Process":
+                    param = ((PostProcess)PostProcess_List.SelectedItem).parameters.First(p => p.id == combo.Uid);
+                    break;
+
+                case "Custom": // NOTE: Maybe unify this to behave like tweaks and post-processes                    
+                    ((CustomTweak)CustomTweak_List.SelectedItem).name = combo.Text;
+                    break;
+            }
+
+            if (currentTab.Header.ToString() != "Custom") { param.value = combo.SelectedIndex.ToString(); }
         }
 
         private void RichTextBox_LostFocus(object sender, EventArgs e)
@@ -1167,6 +1206,31 @@ namespace OpenShade
                 {
                     bool success = false;
 
+                    string daynightStringStart = "";
+                    string daynightStringEnd = "\r\n";
+                    switch (post.parameters[post.parameters.Count - 1].value) {                    
+                        case "1":
+                            daynightStringStart = "if (cb_mDayNightInterpolant == 0) {";
+                            daynightStringEnd = "}\r\n";
+                            break;
+                        case "2":
+                            daynightStringStart = "if (cb_mDayNightInterpolant > 0.89) {";
+                            daynightStringEnd = "}\r\n";
+                            break;
+                        case "3":
+                            daynightStringStart = "if ((cb_mDayNightInterpolant > 0.01) && (cb_mDayNightInterpolant < 0.89)) {";
+                            daynightStringEnd = "}\r\n";
+                            break;
+                        case "4":
+                            daynightStringStart = "if (cb_mDayNightInterpolant < 0.89) {";
+                            daynightStringEnd = "}\r\n";
+                            break;
+                        case "5":
+                            daynightStringStart = "if (cb_mDayNightInterpolant > 0.01) {";
+                            daynightStringEnd = "}\r\n";
+                            break;
+                    }
+
                     switch (post.name)
                     {
                         // NOTE: C# 6 String stuff, pretty neat
@@ -1188,7 +1252,7 @@ const float Sepia_SepiaPower = {post.parameters[2].value};
 	return color;
 }}
 ");
-                            HDRText = HDRText.AddBefore(ref success, "return EndColor;", "EndColor = SepiaMain(vert, EndColor);\r\n");
+                            HDRText = HDRText.AddBefore(ref success, "return EndColor;", daynightStringStart + "EndColor = SepiaMain(vert, EndColor);" + daynightStringEnd);
                             break;
 
                         case "Curves":
@@ -1304,7 +1368,7 @@ float4 CurvesMain(PsQuad vert, float4 color) : SV_Target
   return colorInput;
 }}
 ");
-                            HDRText = HDRText.AddBefore(ref success, "return EndColor;", "EndColor = CurvesMain(vert, EndColor);\r\n");
+                            HDRText = HDRText.AddBefore(ref success, "return EndColor;", daynightStringStart + "EndColor = CurvesMain(vert, EndColor);" + daynightStringEnd);
                             break;
 
                         case "Levels":
@@ -1327,7 +1391,7 @@ else
 	return colorInput;
 }}
 ");
-                            HDRText = HDRText.AddBefore(ref success, "return EndColor;", "EndColor = LevelsMain(vert, EndColor);\r\n");
+                            HDRText = HDRText.AddBefore(ref success, "return EndColor;", daynightStringStart + "EndColor = LevelsMain(vert, EndColor);" + daynightStringEnd);
                             break;
 
                         case "Lift Gamma Gain":
@@ -1349,7 +1413,7 @@ const float3 RGB_Gain = float3({post.parameters[2].value});
 	return saturate(colorInput);
 }}
 ");
-                            HDRText = HDRText.AddBefore(ref success, "return EndColor;", "EndColor = LiftGammaGainMain(vert, EndColor);\r\n");
+                            HDRText = HDRText.AddBefore(ref success, "return EndColor;", daynightStringStart + "EndColor = LiftGammaGainMain(vert, EndColor);" + daynightStringEnd);
                             break;
 
                         case "Technicolor":
@@ -1389,7 +1453,7 @@ float4 TechnicolorMain(PsQuad vert, float4 color) : SV_Target
     return colorInput;
 }}
 ");
-                            HDRText = HDRText.AddBefore(ref success, "return EndColor;", "EndColor = TechnicolorMain(vert, EndColor);\r\n");
+                            HDRText = HDRText.AddBefore(ref success, "return EndColor;", daynightStringStart +  "EndColor = TechnicolorMain(vert, EndColor);" + daynightStringEnd);
                             break;
 
                         case "Technicolor 2":
@@ -1426,7 +1490,7 @@ $@"float4 TechnicolorMain2(PsQuad vert, float4 color) : SV_Target
     return colorInput;
 }}
 ");
-                            HDRText = HDRText.AddBefore(ref success, "return EndColor;", "EndColor = TechnicolorMain2(vert, EndColor);\r\n");
+                            HDRText = HDRText.AddBefore(ref success, "return EndColor;", daynightStringStart + "EndColor = TechnicolorMain2(vert, EndColor);" + daynightStringEnd);
                             break;
 
                         case "Vibrance":
@@ -1450,7 +1514,7 @@ const float3 Vibrance_RGB_balance = float3({post.parameters[1].value});
 	return color;
 }}
 ");
-                            HDRText = HDRText.AddBefore(ref success, "return EndColor;", "EndColor = VibranceMain(vert, EndColor);\r\n");
+                            HDRText = HDRText.AddBefore(ref success, "return EndColor;", daynightStringStart + "EndColor = VibranceMain(vert, EndColor);" + daynightStringEnd);
                             break;
 
                         case "Cineon DPX":
@@ -1495,7 +1559,7 @@ const float Strength  = {post.parameters[5].value};
 	return InputColor;
 }}
 ");
-                            HDRText = HDRText.AddBefore(ref success, "return EndColor;", "EndColor = DPXMain(vert, EndColor);\r\n");
+                            HDRText = HDRText.AddBefore(ref success, "return EndColor;", daynightStringStart + "EndColor = DPXMain(vert, EndColor);" + daynightStringEnd);
                             break;
 
                         // TODO: May be bugged
@@ -1536,7 +1600,7 @@ const float3 Tonemap_FogColor = float3({post.parameters[5].value});
     return colorInput;
 }}
 ");
-                            HDRText = HDRText.AddBefore(ref success, "return EndColor;", "EndColor = TonemapMain(vert, EndColor);\r\n");
+                            HDRText = HDRText.AddBefore(ref success, "return EndColor;", daynightStringStart + "EndColor = TonemapMain(vert, EndColor);" + daynightStringEnd);
                             break;
 
                         case "Luma Sharpen":
@@ -1611,7 +1675,7 @@ float3 blur_ori;
 	return color;
 }}
 ");
-                            HDRText = HDRText.AddBefore(ref success, "return EndColor;", "EndColor = LumaSharpenMain(vert, EndColor);\r\n");
+                            HDRText = HDRText.AddBefore(ref success, "return EndColor;", daynightStringStart + "EndColor = LumaSharpenMain(vert, EndColor);" + daynightStringEnd);
                             break;
 
                     }

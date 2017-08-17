@@ -1,10 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace OpenShade.Classes
 {
@@ -17,18 +13,11 @@ namespace OpenShade.Classes
         HDR
     };
 
-    public enum ChangeType
-    {
-        Replace,
-        AddAfter,
-        AddBefore,
-        CommentOut
-    }
-
     public enum UIType {
         Text,
         Checkbox,
-        RGB
+        RGB,
+        Combobox
     }
 
     public class RGB {
@@ -57,6 +46,7 @@ namespace OpenShade.Classes
         public string defaultValue;
         public decimal min;
         public decimal max;
+        public List<string> range;
         public UIType control;
 
         public Parameter() { }
@@ -122,7 +112,18 @@ namespace OpenShade.Classes
             }
             control = Control;
         }
-    
+
+        public Parameter(string DataName, string Name, string Val, string Default, List<string> ValueRange, UIType Control, string Descr = null)
+        {
+            id = Guid.NewGuid().ToString();
+            dataName = DataName;
+            name = Name;
+            description = Descr;
+            value = Val;
+            defaultValue = Default;
+            range = ValueRange;
+            control = Control;
+        }
     }
 
     public class Tweak
@@ -148,7 +149,7 @@ namespace OpenShade.Classes
             parameters = Params;
         }
 
-        public static void GenerateTweaksData(ObservableCollection<Tweak> tweaks)
+        public static void GenerateTweaksData(List<Tweak> tweaks)
         {
             var newTweak = new Tweak("CLOUDS_POPCORN_MODIFICATOR", Category.Clouds, "'No popcorn' clouds", "", false, new List<Parameter>() { });
             newTweak.parameters.Add(new Parameter("CloudDistanceFactor", "Distance factor", 0.0000000005, 0.0000000005, 0.0000000001, 0.0000000010, UIType.Text));
@@ -387,23 +388,27 @@ namespace OpenShade.Classes
             newPost.parameters.Add(new Parameter("ColorToneX,ColorToneY,ColorToneZ", "Color Tone", new RGB(1.4, 1.1, 0.9), new RGB(1.4, 1.1, 0.9), 0, 2.55, UIType.RGB, "ColorTone values 0.00 to 2.55 can be thought of as equivalents to 0 to 255.To find a sepia color, open the GIMP color chooser and note the RGB values of the selected color.\r\n\r\nSuppose we want to add a dark yellow. RGB = 173, 171, 59. Add a decimal point two places to the left in each value to produce 1.73, 1.71, and 0.59. Use those values for ColorTone."));
             newPost.parameters.Add(new Parameter("GreyPower", "Grey Power", 0.11, 0.11, 0, 1, UIType.Text, "Desaturates the image this much before tinting.\r\n\r\nIf GreyPower is over 1.00, then the image will appear over - whitened."));
             newPost.parameters.Add(new Parameter("SepiaPower", "Sepia Power", 0.58, 0.58, 0, 1, UIType.Text, "How strong the tint color should be.\r\n\r\nLower values are best used with SepiaPower.Increasing SepiaPower too much causes the image to appear colorized.Values 0.13 to 0.25 are best.Not too much, not too little."));
+            newPost.parameters.Add(new Parameter("DayNightUse", "Time usage", "0", "0", new List<string>() { "Always", "Day only", "Night only", "Twilight", "Twilight+Day", "Twilight+Night" }, UIType.Combobox, ""));
             postProcesses.Add(newPost);
 
             newPost = new PostProcess("POSTPROCESS_SHADER Curves", "Curves", 1, false, new List<Parameter>() { }, "");
             newPost.parameters.Add(new Parameter("Curves_mode", "Curves Mode", 0, 0, 0, 0, UIType.Text));
             newPost.parameters.Add(new Parameter("Curves_contrast", "Curves Contrast", 0.65, 0.65, 0, 0, UIType.Text));
             newPost.parameters.Add(new Parameter("Curves_formula", "Curves Formula", 5, 5, 0, 0, UIType.Text));
+            newPost.parameters.Add(new Parameter("DayNightUse", "Time usage", "0", "0", new List<string>() { "Always", "Day only", "Night only", "Twilight", "Twilight+Day", "Twilight+Night" }, UIType.Combobox, ""));
             postProcesses.Add(newPost);
 
             newPost = new PostProcess("POSTPROCESS_SHADER Levels", "Levels", 2, false, new List<Parameter>() { }, "Used sparingly, Levels will trim off excess whiteness, and it will darken shadows and other dark areas that appear too “washed out” when they should be darker.\r\n\r\nOn the other hand, visual detail is lost when used excessively, and drastic scene changes can be produced.This is either good or bad depending upon the desired effect.In short, Levels is an effect best used for minor touchups to the resulting image.");
             newPost.parameters.Add(new Parameter("Levels_black_point", "Black point", 16, 16, 0, 255, UIType.Text, "Anything below this value to 0 becomes solid black."));
             newPost.parameters.Add(new Parameter("Levels_white_point", "White point", 235, 235, 0, 255, UIType.Text, "Anything above this value to 255 becomes solid white."));
+            newPost.parameters.Add(new Parameter("DayNightUse", "Time usage", "0", "0", new List<string>() { "Always", "Day only", "Night only", "Twilight", "Twilight+Day", "Twilight+Night" }, UIType.Combobox, ""));
             postProcesses.Add(newPost);
 
             newPost = new PostProcess("POSTPROCESS_SHADER LiftGammaGain", "Lift Gamma Gain", 3, false, new List<Parameter>() { }, "Lift Gamma Gain effect provides a fine amount of control over how gamma is applied to an image. While the Tonemap effect provides a basic gamma control for basic gamma application, Lift Gamma Gain allows for more precise gamma control over the brightness of shadow areas, midrange areas, and bright areas, and it can do so at the color level with RGB values.");
             newPost.parameters.Add(new Parameter("RGB_LiftX,RGB_LiftY,RGB_LiftZ", "RGB Lift", new RGB(1, 1, 1), new RGB(1, 1, 1), 0, 2, UIType.RGB, "Lowering RGB Lift makes dark areas darker. Raising RGB Lift makes dark areas lighter."));
             newPost.parameters.Add(new Parameter("RGB_GammaX,RGB_GammaY,RGB_GammaZ", "RGB Gamma", new RGB(1, 1, 1), new RGB(1, 1, 1), 0, 2, UIType.RGB, ""));
             newPost.parameters.Add(new Parameter("RGB_GainX,RGB_GainY,RGB_GainZ", "RGB Gain", new RGB(1, 1, 1), new RGB(1, 1, 1), 0, 2, UIType.RGB, "Raising RGB Gain makes light areas lighter. Lowering RGB Gain makes light areas darker."));
+            newPost.parameters.Add(new Parameter("DayNightUse", "Time usage", "0", "0", new List<string>() { "Always", "Day only", "Night only", "Twilight", "Twilight+Day", "Twilight+Night" }, UIType.Combobox, ""));
             postProcesses.Add(newPost);
 
             newPost = new PostProcess("POSTPROCESS_SHADER Technicolor", "Technicolor", 4, false, new List<Parameter>() { }, "Technicolor attempts to recreate a pseudo-Technicolor effect by modifying the colors of the image enough to emulate the three-strip film process used by movie studios to produce color movies during the 1930s through 1950s.");
@@ -412,6 +417,7 @@ namespace OpenShade.Classes
             newPost.parameters.Add(new Parameter("redNegativeAmount", "redNegativeAmount", 0.88, 0.88, 0, 1, UIType.Text, "Reducing this value adds more of Red"));
             newPost.parameters.Add(new Parameter("greenNegativeAmount", "Green Negative Amount", 0.88, 0.88, 0, 1, UIType.Text, "Reducing this value adds more of Green"));
             newPost.parameters.Add(new Parameter("blueNegativeAmount", "Blue Negative Amount", 0.88, 0.88, 0, 1, UIType.Text, "Reducing this value adds more of Blue"));
+            newPost.parameters.Add(new Parameter("DayNightUse", "Time usage", "0", "0", new List<string>() { "Always", "Day only", "Night only", "Twilight", "Twilight+Day", "Twilight+Night" }, UIType.Combobox, ""));
             postProcesses.Add(newPost);
 
             newPost = new PostProcess("POSTPROCESS_SHADER Technicolor2", "Technicolor 2", 5, false, new List<Parameter>() { }, "Technicolor attempts to recreate a pseudo-Technicolor effect by modifying the colors of the image enough to emulate the three-strip film process used by movie studios to produce color movies during the 1930s through 1950s.");
@@ -419,11 +425,13 @@ namespace OpenShade.Classes
             newPost.parameters.Add(new Parameter("Brightness", "Brightness", 1, 1, 0.5, 1.5, UIType.Text, "Higher means brighter image."));
             newPost.parameters.Add(new Parameter("Saturation", "Saturation", 1, 1, 0, 1.5, UIType.Text, "Additional saturation control since this effect tends to oversaturate the image."));
             newPost.parameters.Add(new Parameter("Strength", "Strength", 1, 1, 0, 1, UIType.Text, ""));
+            newPost.parameters.Add(new Parameter("DayNightUse", "Time usage", "0", "0", new List<string>() { "Always", "Day only", "Night only", "Twilight", "Twilight+Day", "Twilight+Night" }, UIType.Combobox, ""));
             postProcesses.Add(newPost);
 
             newPost = new PostProcess("POSTPROCESS_SHADER Vibrance", "Vibrance", 6, false, new List<Parameter>() { }, "Vibrance saturates or desaturates the image by a specified color. Vibrance offers more flexibility over which color influences the image.\r\n\r\nVibrance does not remove all colors the way the monochrome effect produces a black and white image, but vibrance will make colors more colorful or less colorful depending upon the values used to adjust the effect.Faded colors can give the image a washed out film effect that other effects can refine.");
             newPost.parameters.Add(new Parameter("Vibrance", "Vibrance", 0.2, 0.2, -1, 1, UIType.Text, "Specifies how much to saturate (+) or desturate (-) the image."));
             newPost.parameters.Add(new Parameter("Vibrance_RGB_balanceX,Vibrance_RGB_balanceY,Vibrance_RGB_balanceZ", "Vibrance RGB Balance", new RGB(1, 1, 1), new RGB(1, 1, 1), -10, 10, UIType.RGB, "Gives priority to a given RGB color. The range for each color channel is -10.00 to 10.00. Each RGB channel value is multiplied by the value of Vibrance to produce the final adjustment that specifies how much to saturate or desaturate that color."));
+            newPost.parameters.Add(new Parameter("DayNightUse", "Time usage", "0", "0", new List<string>() { "Always", "Day only", "Night only", "Twilight", "Twilight+Day", "Twilight+Night" }, UIType.Combobox, ""));
             postProcesses.Add(newPost);
 
             newPost = new PostProcess("POSTPROCESS_SHADER DPX3", "Cineon DPX", 7, false, new List<Parameter>() { }, "Cineon DPX setting allows limited post-production image effects that (somewhat) resemble the results obtained with the Cineon System released by Kodak sometime around 1992-1993.");
@@ -433,6 +441,7 @@ namespace OpenShade.Classes
             newPost.parameters.Add(new Parameter("Saturation", "Saturation", 3, 3, 0, 8, UIType.Text, ""));
             newPost.parameters.Add(new Parameter("Colorfulness", "Colorfulness", 2.5, 2.5, 0.1, 2.5, UIType.Text, ""));
             newPost.parameters.Add(new Parameter("Strength", "Strength", 0.2, 0.2, 0, 1, UIType.Text, ""));
+            newPost.parameters.Add(new Parameter("DayNightUse", "Time usage", "0", "0", new List<string>() { "Always", "Day only", "Night only", "Twilight", "Twilight+Day", "Twilight+Night" }, UIType.Combobox, ""));
             postProcesses.Add(newPost);
 
             newPost = new PostProcess("POSTPROCESS_SHADER Tonemap", "Tonemap", 8, false, new List<Parameter>() { }, "Tonemap is an effect that adjusts a variety of related image enhancements that include gamma, saturation, bleach, exposure, and color removal.\r\n\r\nTonemap is a useful “many-in-one” effect. Other effects might offer a greater degree of control over the image, but if only minor modifications are needed by using one effect, then Tonemap has its place.");
@@ -442,6 +451,7 @@ namespace OpenShade.Classes
             newPost.parameters.Add(new Parameter("Bleach", "Bleach", 0, 0, 0, 1, UIType.Text, "Avoid setting bleach above 1. The image becomes darker after that, not lighter. Whites become blacks while blacks remain dark. Small values, such as 0.020, are best."));
             newPost.parameters.Add(new Parameter("Defog", "Defog", 0, 0, 0, 1, UIType.Text, "Defog and FogColor work together. FogColor specifies a color to remove (in decimal RGB format), and Defog specifies how much of that color to remove."));
             newPost.parameters.Add(new Parameter("FogColorX,FogColorY,FogColorZ", "FogColor RGB", new RGB(0, 0, 2.55), new RGB(0, 0, 2.55), 0, 2.55, UIType.RGB, "This operates differently than might be expected because lower values preserve more color. Higher values indicate more of that color to be removed."));
+            newPost.parameters.Add(new Parameter("DayNightUse", "Time usage", "0", "0", new List<string>() { "Always", "Day only", "Night only", "Twilight", "Twilight+Day", "Twilight+Night" }, UIType.Combobox, ""));
             postProcesses.Add(newPost);
 
             newPost = new PostProcess("POSTPROCESS_SHADER LumaSharpen", "Luma Sharpen", 9, false, new List<Parameter>() { }, "Lumasharpen sharpens the image to enhance details. The end result is similar to what would be seen after an image has been enhanced using the Unsharp Mask filter in GIMP or Photoshop.");
@@ -449,6 +459,7 @@ namespace OpenShade.Classes
             newPost.parameters.Add(new Parameter("Sharp_clamp", "Sharp Clamp", 0.035, 0.035, 0, 0, UIType.Text, "Limits maximum amount of sharpening a pixel recieves"));
             newPost.parameters.Add(new Parameter("Pattern", "Pattern", 2, 2, 1, 4, UIType.Text, "Choose a sample pattern. 1 = Fast, 2 = Normal, 3 = Wider, 4 = Pyramid shaped."));
             newPost.parameters.Add(new Parameter("Offset_bias", "Offset Bias", 1, 1, 0, 6, UIType.Text, "Offset bias adjusts the radius of the sampling pattern."));
+            newPost.parameters.Add(new Parameter("DayNightUse", "Time usage", "0", "0", new List<string>() { "Always", "Day only", "Night only", "Twilight", "Twilight+Day", "Twilight+Night" }, UIType.Combobox, ""));
             postProcesses.Add(newPost);
 
         }

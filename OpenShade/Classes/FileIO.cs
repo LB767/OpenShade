@@ -90,7 +90,7 @@ namespace OpenShade.Classes
         }
 
 
-        public void LoadTweaks(ObservableCollection<Tweak> tweaks, IniFile pref)
+        public void LoadTweaks(List<Tweak> tweaks, IniFile pref)
         {
             foreach (var tweak in tweaks) {
                 tweak.isEnabled = pref.Read("IsActive", tweak.key) == "1" ? true : false;
@@ -187,7 +187,7 @@ namespace OpenShade.Classes
             return result;
         }
 
-        public void SavePreset(string filepath, ObservableCollection<Tweak> tweaks, ObservableCollection<CustomTweak> customTweaks, List<PostProcess> postProcesses, string comment, IniFile pref)
+        public void SavePreset(string filepath, List<Tweak> tweaks, ObservableCollection<CustomTweak> customTweaks, List<PostProcess> postProcesses, string comment, IniFile pref)
         {
             // Standard tweaks    
 
