@@ -127,7 +127,7 @@ namespace OpenShade.Classes
             {
                 var newTweak = new CustomTweak(section, 
                     pref.Read("Name", section),
-                    pref.Read("Shader", section),
+                    Path.GetFileName(pref.Read("Shader", section)), // to remove Post-Process for HDR file
                     int.Parse(pref.Read("Index", section)),
                     pref.Read("OldPattern", section).FromHexString(),
                     pref.Read("NewPattern", section).FromHexString(),
@@ -142,10 +142,12 @@ namespace OpenShade.Classes
 
         }
 
-        public void LoadPostProcesses(ObservableCollection<PostProcess> postProcesses, IniFile pref)
+        public void LoadPostProcesses(List<PostProcess> postProcesses, IniFile pref)
         {
             foreach (var post in postProcesses) {
                 post.isEnabled = pref.Read("IsActive", post.key) == "1" ? true : false;
+
+                post.index = int.Parse(pref.Read("Index", post.key));
 
                 string rawParams = pref.Read("Params", post.key).FromHexString();
                 string[] lines = rawParams.Split(new string[] { "\r\n" }, StringSplitOptions.None);
@@ -173,7 +175,10 @@ namespace OpenShade.Classes
                         }
                     }
                 }
-            }           
+            }
+
+            // Reorder the list based on process index
+            postProcesses.Sort((x, y) => x.index.CompareTo(y.index));
         }
 
         public string LoadComments(IniFile pref) {
@@ -182,7 +187,7 @@ namespace OpenShade.Classes
             return result;
         }
 
-        public void SavePreset(string filepath, ObservableCollection<Tweak> tweaks, ObservableCollection<CustomTweak> customTweaks, ObservableCollection<PostProcess> postProcesses, string comment, IniFile pref)
+        public void SavePreset(string filepath, ObservableCollection<Tweak> tweaks, ObservableCollection<CustomTweak> customTweaks, List<PostProcess> postProcesses, string comment, IniFile pref)
         {
             // Standard tweaks    
 

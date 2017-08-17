@@ -31,9 +31,14 @@ namespace OpenShade
         string postProcessesHash;
         string commentHash; // that's just the original comments
 
+        /*
+         * If a list will contain the same items for their whole lifetime, but the individual objects within that list will change, 
+         * then it's enough for just the objects to raise change notifications (typically through INotifyPropertyChanged) and List<T> is sufficient. 
+         * But if the list will contain different objects from time to time, or if the order changes, then you should use ObservableCollection<T>.
+         */
         ObservableCollection<Tweak> tweaks;
         ObservableCollection<CustomTweak> customTweaks;
-        ObservableCollection<PostProcess> postProcesses;
+        List<PostProcess> postProcesses;
         string comment;
 
         const string P3DRegistryPath = "HKEY_LOCAL_MACHINE\\SOFTWARE\\Lockheed Martin\\Prepar3D v4";
@@ -58,7 +63,7 @@ namespace OpenShade
 
             tweaks = new ObservableCollection<Tweak>() { };
             customTweaks = new ObservableCollection<CustomTweak>() { };
-            postProcesses = new ObservableCollection<PostProcess>() { };
+            postProcesses = new List<PostProcess>() { };
 
             Tweak.GenerateTweaksData(tweaks);
             PostProcess.GeneratePostProcessData(postProcesses);
@@ -1299,7 +1304,7 @@ float4 CurvesMain(PsQuad vert, float4 color) : SV_Target
   return colorInput;
 }}
 ");
-                            HDRText = HDRText.AddBefore(ref success, "return EndColor;", "EndColor = EndColor = CurvesMain(vert, EndColor);\r\n");
+                            HDRText = HDRText.AddBefore(ref success, "return EndColor;", "EndColor = CurvesMain(vert, EndColor);\r\n");
                             break;
 
                         case "Levels":
@@ -1349,7 +1354,47 @@ const float3 RGB_Gain = float3({post.parameters[2].value});
 
                         case "Technicolor":
                             HDRText = HDRText.AddBefore(ref success, "// Applies exposure and tone mapping to the input, and combines it with the",
-$@"float4 TechnicolorMain(PsQuad vert, float4 color) : SV_Target
+$@"#define cyanfilter float3(0.0, 1.30, 1.0)
+#define magentafilter float3(1.0, 0.0, 1.05)
+#define yellowfilter float3(1.6, 1.6, 0.05)
+#define redorangefilter float2(1.05, 0.620)
+#define greenfilter float2(0.30, 1.0)
+#define magentafilter2 magentafilter.rb
+float4 TechnicolorMain(PsQuad vert, float4 color) : SV_Target
+{{
+
+    const float TechniAmount = { post.parameters[0].value };
+    const float TechniPower = { post.parameters[1].value };
+    const float redNegativeAmount = { post.parameters[2].value };
+    const float greenNegativeAmount = { post.parameters[3].value };
+    const float blueNegativeAmount = { post.parameters[4].value };
+    uint2 uTDim, uDDim;
+    srcTex.GetDimensions(uTDim.x, uTDim.y);
+    int3 iTexCoord = int3(uTDim.x * vert.texcoord.x, uTDim.y * vert.texcoord.y, 0);
+                              
+    float4 colorInput = color;
+    float3 tcol = colorInput.rgb;
+    float2 rednegative_mul = tcol.rg * (1.0 / (redNegativeAmount * TechniPower));
+    float2 greennegative_mul = tcol.rg * (1.0 / (greenNegativeAmount * TechniPower));
+    float2 bluenegative_mul = tcol.rb * (1.0 / (blueNegativeAmount * TechniPower));
+    float rednegative = dot(redorangefilter, rednegative_mul);
+    float greennegative = dot(greenfilter, greennegative_mul);
+    float bluenegative = dot(magentafilter2, bluenegative_mul);
+    float3 redoutput = rednegative.rrr + cyanfilter;
+    float3 greenoutput = greennegative.rrr + magentafilter;
+    float3 blueoutput = bluenegative.rrr + yellowfilter;
+    float3 result = redoutput * greenoutput * blueoutput;
+    colorInput.rgb = lerp(tcol, result, TechniAmount);
+                                    
+    return colorInput;
+}}
+");
+                            HDRText = HDRText.AddBefore(ref success, "return EndColor;", "EndColor = TechnicolorMain(vert, EndColor);\r\n");
+                            break;
+
+                        case "Technicolor 2":
+                            HDRText = HDRText.AddBefore(ref success, "// Applies exposure and tone mapping to the input, and combines it with the",
+$@"float4 TechnicolorMain2(PsQuad vert, float4 color) : SV_Target
 {{
     const float3 ColorStrength = float3({post.parameters[0].value});
     const float Brightness = {post.parameters[1].value};
@@ -1381,7 +1426,7 @@ $@"float4 TechnicolorMain(PsQuad vert, float4 color) : SV_Target
     return colorInput;
 }}
 ");
-                            HDRText = HDRText.AddBefore(ref success, "return EndColor;", "EndColor = TechnicolorMain(vert, EndColor);\r\n");
+                            HDRText = HDRText.AddBefore(ref success, "return EndColor;", "EndColor = TechnicolorMain2(vert, EndColor);\r\n");
                             break;
 
                         case "Vibrance":
