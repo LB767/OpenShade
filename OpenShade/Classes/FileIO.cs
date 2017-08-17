@@ -234,8 +234,10 @@ namespace OpenShade.Classes
 
             // Post-Process
             
-            foreach (var post in postProcesses) {
+            foreach (var post in postProcesses)
+            {
                 pref.Write("IsActive", post.isEnabled ? "1" : "0", post.key);
+                pref.Write("Index", post.index.ToString(), post.key);
 
                 string finalString = "";
 

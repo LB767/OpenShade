@@ -13,6 +13,7 @@ using System.Windows.Media;
 using System.Diagnostics;
 using System.Windows.Controls.Primitives;
 using System.Collections.ObjectModel;
+using System.Windows.Input;
 
 namespace OpenShade
 {
@@ -256,6 +257,45 @@ namespace OpenShade
             CustomTweak selectedTweak = (CustomTweak)CustomTweak_List.SelectedItem;
             selectedTweak.shaderFile = (string)CustomTweakShaderFile_ComboBox.SelectedItem;
         }
+
+        // DRAG & DROP ----------------------------------------------------
+        private void PreviewMouseMoveEventHandler(object sender, MouseEventArgs e)
+        {
+            if (sender is ListViewItem && e.LeftButton == MouseButtonState.Pressed)
+            {
+                ListViewItem draggedItem = sender as ListViewItem;
+                DragDrop.DoDragDrop(draggedItem, draggedItem.DataContext, DragDropEffects.Move);
+                draggedItem.IsSelected = true;
+            }
+
+        }
+
+        private void DropEventHandler(object sender, DragEventArgs e)
+        {
+            PostProcess droppedData = e.Data.GetData(typeof(PostProcess)) as PostProcess;
+            PostProcess target = ((ListViewItem)sender).DataContext as PostProcess;
+
+            int removedIdx = PostProcess_List.Items.IndexOf(droppedData);
+            int targetIdx = PostProcess_List.Items.IndexOf(target);
+
+            if (removedIdx < targetIdx)
+            {
+                postProcesses.Insert(targetIdx + 1, droppedData);
+                postProcesses.RemoveAt(removedIdx);
+            }
+            else
+            {
+                int remIdx = removedIdx + 1;
+                if (postProcesses.Count + 1 > remIdx)
+                {
+                    postProcesses.Insert(targetIdx, droppedData);
+                    postProcesses.RemoveAt(remIdx);
+                }
+            }
+
+            PostProcess_List.Items.Refresh();
+        }
+
         #endregion
 
         #region PostProcesses        

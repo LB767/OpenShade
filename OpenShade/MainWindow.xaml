@@ -189,7 +189,14 @@
                                     <TextBlock Text="{Binding name}"/>
                                 </StackPanel>
                             </DataTemplate>
-                        </ListView.ItemTemplate>                           
+                        </ListView.ItemTemplate>
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="AllowDrop" Value="True"/>
+                                <EventSetter Event="PreviewMouseMove" Handler="PreviewMouseMoveEventHandler"/>
+                                <EventSetter Event="Drop" Handler="DropEventHandler"/>
+                            </Style>
+                        </ListView.ItemContainerStyle>
                     </ListView>
                  
                     <GridSplitter Grid.Column="1" HorizontalAlignment="Stretch" Width="2"/>
@@ -261,14 +268,7 @@
                                         </TextBlock>
                                     </StackPanel>                                    
                                 </DataTemplate>
-                            </ListView.ItemTemplate>
-                            <!--<ListBox.ItemContainerStyle>
-                                <Style TargetType="ListBoxItem">
-                                    <Setter Property="AllowDrop" Value="True"/>
-                                    <EventSetter Event="PreviewMouseMove" Handler="PreviewMouseMoveEventHandler"/>
-                                    <EventSetter Event="Drop" Handler="DropEventHandler"/>
-                                </Style>
-                            </ListBox.ItemContainerStyle>-->
+                            </ListView.ItemTemplate>                            
                         </ListView>
                     </DockPanel>
 
