@@ -255,7 +255,7 @@
                                         <TextBlock Text="{Binding name}">
                                             <TextBlock.ContextMenu>
                                                 <ContextMenu DataContext="{Binding RelativeSource={RelativeSource Self}, Path=PlacementTarget.DataContext}">
-                                                    <MenuItem Header="Delete" Click="DeleteCustomTweak" Foreground="{DynamicResource TextColor}"/>
+                                                    <MenuItem Header="Delete" Click="DeleteCustomTweak"/>
                                                 </ContextMenu>
                                             </TextBlock.ContextMenu>
                                         </TextBlock>
