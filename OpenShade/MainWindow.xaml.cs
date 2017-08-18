@@ -951,25 +951,72 @@ namespace OpenShade
                         #endregion
 
                         #region Lighting
+                        // NOTE: Object lighting and Aircraft lighting and saturation interract quite heavily with each other
+                        // Making something clearer might be a decent idea to avoid headaches...
+                        case "Objects lighting":
+                            currentFile = FileIO.generalFile;
+
+                            string aircraftLighting = "";
+                            Tweak aircraft = tweaks.First(p => p.name == "Aircraft lighting and saturation");
+                            if (aircraft.isEnabled)
+                            {
+                                aircraftLighting = "&&& ADD THE AIRCRAFT LIGHTING TWEAK HERE &&&";
+                            }                  
+                           
+                            generalText = generalText.ReplaceAll(ref success, @"cDiffuse = cBase * (float4( saturate( 
+                (cb_mSun.mAmbient.xyz + (shadowContrib * (sunDiffuse * fDotSun))) + 
+                (cb_mMoon.mAmbient.xyz + (shadowContrib * (moonDiffuse * fDotMoon)))), 1) + cDiffuse);",
+
+         $@"if (cb_mObjectType != 19) cDiffuse = cBase * (float4( saturate((cb_mSun.mAmbient.xyz * {tweak.parameters[0].value} + (shadowContrib * (sunDiffuse * {tweak.parameters[1].value} * fDotSun))) + 
+			  (cb_mMoon.mAmbient.xyz * {tweak.parameters[2].value} + (shadowContrib * (moonDiffuse * {tweak.parameters[3].value} * fDotMoon)))), 1) + cDiffuse);
+			{aircraftLighting}
+            else
+			  cDiffuse = cBase * (float4( saturate( (cb_mSun.mAmbient.xyz + (shadowContrib * (sunDiffuse * fDotSun))) + (cb_mMoon.mAmbient.xyz + (shadowContrib * (moonDiffuse * fDotMoon)))), 1) + cDiffuse);");
+                            
+                            break;
+
                         case "Aircraft lighting and saturation":
                             currentFile = FileIO.generalFile;
 
+                            string replaceText = @"cDiffuse = cBase * (float4( saturate( 
+                (cb_mSun.mAmbient.xyz + (shadowContrib * (sunDiffuse * fDotSun))) + 
+                (cb_mMoon.mAmbient.xyz + (shadowContrib * (moonDiffuse * fDotMoon)))), 1) + cDiffuse);";
+                            string elseText = "";
+                            string finalText = @"else
+			  cDiffuse = cBase * (float4( saturate( (cb_mSun.mAmbient.xyz + (shadowContrib * (sunDiffuse * fDotSun))) + (cb_mMoon.mAmbient.xyz + (shadowContrib * (moonDiffuse * fDotMoon)))), 1) + cDiffuse);";
+
+                            if (generalText.IndexOf("&&& ADD THE AIRCRAFT LIGHTING TWEAK HERE &&&") >= 0)
+                            {
+                                replaceText = "&&& ADD THE AIRCRAFT LIGHTING TWEAK HERE &&&";
+                                elseText = "else ";
+                                finalText = "";
+                            }                            
+
                             if (tweak.parameters[5].value == "1")
                             {
-                                generalText = generalText.ReplaceAll(ref success, @"cDiffuse = cBase * (float4( saturate( 
-                (cb_mSun.mAmbient.xyz + (shadowContrib * (sunDiffuse * fDotSun))) + 
-                (cb_mMoon.mAmbient.xyz + (shadowContrib * (moonDiffuse * fDotMoon)))), 1) + cDiffuse);", "#if !defined(PS_NEEDS_TANSPACE)\r\n   if (cb_mObjectType == 19)\r\n cDiffuse = cBase * (float4(saturate((cb_mSun.mAmbient.xyz * " + tweak.parameters[0].value.ToString() + " + (shadowContrib * (sunDiffuse * " + tweak.parameters[1].value.ToString() + " * fDotSun))) +\r\n     (cb_mMoon.mAmbient.xyz * " + tweak.parameters[2].value.ToString() + " + (shadowContrib * (moonDiffuse * " + tweak.parameters[3].value.ToString() + " * fDotMoon)))), 1) + cDiffuse);\r\n  #else\r\n  if (cb_mObjectType == 19)\r\n   cDiffuse = cBase * (float4(saturate((cb_mSun.mAmbient.xyz + (shadowContrib * (sunDiffuse * fDotSun))) + (cb_mMoon.mAmbient.xyz + (shadowContrib * (moonDiffuse * fDotMoon)))), 1) + cDiffuse);\r\n #endif\r\n  else\r\n  cDiffuse = cBase * (float4(saturate((cb_mSun.mAmbient.xyz + (shadowContrib * (sunDiffuse * fDotSun))) + (cb_mMoon.mAmbient.xyz + (shadowContrib * (moonDiffuse * fDotMoon)))), 1) + cDiffuse);");
+                                generalText = generalText.ReplaceAll(ref success, replaceText,
+
+         $@"#if !defined(PS_NEEDS_TANSPACE)
+			{elseText}if (cb_mObjectType == 19) cDiffuse = cBase * (float4( saturate((cb_mSun.mAmbient.xyz * {tweak.parameters[0].value} + (shadowContrib * (sunDiffuse * {tweak.parameters[1].value} * fDotSun))) + 
+			  (cb_mMoon.mAmbient.xyz * {tweak.parameters[2].value} + (shadowContrib * (moonDiffuse * {tweak.parameters[3].value} * fDotMoon)))), 1) + cDiffuse);
+			#else
+			{elseText}if (cb_mObjectType == 19)
+			  cDiffuse = cBase * (float4( saturate( (cb_mSun.mAmbient.xyz + (shadowContrib * (sunDiffuse * fDotSun))) + (cb_mMoon.mAmbient.xyz + (shadowContrib * (moonDiffuse * fDotMoon)))), 1) + cDiffuse);
+			#endif
+			{finalText}");
                             }
                             else
                             {
-                                generalText = generalText.ReplaceAll(ref success, @"cDiffuse = cBase * (float4( saturate( 
-                (cb_mSun.mAmbient.xyz + (shadowContrib * (sunDiffuse * fDotSun))) + 
-                (cb_mMoon.mAmbient.xyz + (shadowContrib * (moonDiffuse * fDotMoon)))), 1) + cDiffuse);", "if (cb_mObjectType == 19)\r\n cDiffuse = cBase * (float4( saturate((cb_mSun.mAmbient.xyz * " + tweak.parameters[0].value.ToString() + " + (shadowContrib * (sunDiffuse * " + tweak.parameters[1].value.ToString() + " * fDotSun))) + (cb_mMoon.mAmbient.xyz * " + tweak.parameters[2].value.ToString() + " + (shadowContrib * (moonDiffuse * " + tweak.parameters[3].value.ToString() + " * fDotMoon)))), 1) +cDiffuse);\r\n   else\r\n     cDiffuse = cBase * (float4(saturate((cb_mSun.mAmbient.xyz + (shadowContrib * (sunDiffuse * fDotSun))) + (cb_mMoon.mAmbient.xyz + (shadowContrib * (moonDiffuse * fDotMoon)))), 1) + cDiffuse); ");
+                                generalText = generalText.ReplaceAll(ref success, replaceText,
+
+         $@"{elseText}if (cb_mObjectType == 19) cDiffuse = cBase * (float4( saturate((cb_mSun.mAmbient.xyz * {tweak.parameters[0].value} + (shadowContrib * (sunDiffuse * {tweak.parameters[1].value} * fDotSun))) + 
+			  (cb_mMoon.mAmbient.xyz * {tweak.parameters[2].value} + (shadowContrib * (moonDiffuse * {tweak.parameters[3].value} * fDotMoon)))), 1) + cDiffuse);
+			{finalText}");
                             }
 
                             generalText = generalText.AddBefore(ref success, "// Apply IR if active", "if ((cb_mObjectType == (uint)0)  ||  (cb_mObjectType == (uint)19))\r\n    {\r\n   cColor.rgb = saturate(lerp(dot(cColor.rgb, float3(0.299f, 0.587f, 0.114f)), cColor.rgb, " + tweak.parameters[4].value.ToString() + "));\r\n    }\r\n");
 
-                            break;
+                            break;                        
 
                         case "Autogen emissive lighting":
                             currentFile = FileIO.generalFile;
@@ -981,27 +1028,7 @@ namespace OpenShade
                             {
                                 generalText = generalText.ReplaceSecond(ref success, "cColor += float4(fEmissiveScale * cEmissive.rgb, 0);", "if ((cb_mObjectType == 10) || (cb_mObjectType == 28)) cColor = lerp(fEmissiveScale * cEmissive, cColor, 1 - cb_mDayNightInterpolant); else cColor += float4(fEmissiveScale * cEmissive.rgb, 0);");
                             }
-                            break;
-
-                        case "Objects lighting":
-                            currentFile = FileIO.generalFile;
-                            {
-                                int index = generalText.IndexOf(@"cDiffuse = cBase * (float4( saturate( 
-                (cb_mSun.mAmbient.xyz + (shadowContrib * (sunDiffuse * fDotSun))) + 
-                (cb_mMoon.mAmbient.xyz + (shadowContrib * (moonDiffuse * fDotMoon)))), 1) + cDiffuse);");
-
-                                if (index >= 0)
-                                {
-                                    generalText = generalText.ReplaceAll(ref success, @"cDiffuse = cBase * (float4( saturate( 
-                (cb_mSun.mAmbient.xyz + (shadowContrib * (sunDiffuse * fDotSun))) + 
-                (cb_mMoon.mAmbient.xyz + (shadowContrib * (moonDiffuse * fDotMoon)))), 1) + cDiffuse);", "if (cb_mObjectType != 19)\r\n cDiffuse = cBase * (float4(saturate((cb_mSun.mAmbient.xyz * " + tweak.parameters[0].value.ToString() + " + (shadowContrib * (sunDiffuse * " + tweak.parameters[1].value.ToString() + " * fDotSun))) + (cb_mMoon.mAmbient.xyz * " + tweak.parameters[2].value.ToString() + " + (shadowContrib * (moonDiffuse * " + tweak.parameters[3].value.ToString() + " * fDotMoon)))), 1) + cDiffuse);\r\n   else\r\n cDiffuse = cBase * (float4(saturate((cb_mSun.mAmbient.xyz + (shadowContrib * (sunDiffuse * fDotSun))) + (cb_mMoon.mAmbient.xyz + (shadowContrib * (moonDiffuse * fDotMoon)))), 1) + cDiffuse); ");
-                                }
-                                else // Aircraft lighting and saturation is applied
-                                {
-                                    generalText = generalText.AddBefore(ref success, "#if !defined(SHD_BASE) && defined(SHD_RECEIVE_SHADOWS)", "if (cb_mObjectType != 19)\r\n cDiffuse = cBase * (float4(saturate((cb_mSun.mAmbient.xyz * " + tweak.parameters[0].value.ToString() + " + (shadowContrib * (sunDiffuse * " + tweak.parameters[1].value.ToString() + " * fDotSun))) + (cb_mMoon.mAmbient.xyz * " + tweak.parameters[2].value.ToString() + " + (shadowContrib * (moonDiffuse * " + tweak.parameters[3].value.ToString() + " * fDotMoon)))), 1) + cDiffuse);\r\n   else\r\n cDiffuse = cBase * (float4(saturate((cb_mSun.mAmbient.xyz + (shadowContrib * (sunDiffuse * fDotSun))) + (cb_mMoon.mAmbient.xyz + (shadowContrib * (moonDiffuse * fDotMoon)))), 1) + cDiffuse);\r\n");
-                                }
-                            }
-                            break;
+                            break;                        
 
                         case "Specular lighting":
                             currentFile = FileIO.funclibFile;
@@ -1170,7 +1197,7 @@ namespace OpenShade
                     }
                     else if (!success && !supported)
                     {
-                        Log(ErrorType.Warning, "Did not apply tweak [" + tweak.name + "] in " + currentFile + " file. Tweak is not upported.");
+                        Log(ErrorType.Warning, "Did not apply tweak [" + tweak.name + "] in " + currentFile + " file. Tweak is not supported.");
                     }
                     else
                     {
@@ -1768,6 +1795,10 @@ float3 blur_ori;
             if (fileData.CopyShaderFiles(backupDirectory, shaderDirectory))
             {
                 Log(ErrorType.None, "Shader files restored");
+                if (fileData.ClearDirectory(cacheDirectory))
+                {
+                    Log(ErrorType.None, "Shader cache cleared");
+                }
             }
         }
 
@@ -1798,15 +1829,13 @@ float3 blur_ori;
 
         private void ClearShaders_Click(object sender, RoutedEventArgs e)
         {
-            try
+            if (fileData.ClearDirectory(cacheDirectory))
             {
-                fileData.ClearDirectory(cacheDirectory);
                 Log(ErrorType.None, "Shader cache cleared");
             }
-            catch
+            else
             {
                 Log(ErrorType.Error, "Could not clear shader cache.");
-                return;
             }
         }
 

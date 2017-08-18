@@ -79,13 +79,21 @@ namespace OpenShade.Classes
             }
         }
 
-        public void ClearDirectory(string dir)
+        public bool ClearDirectory(string dir)
         {
-            DirectoryInfo dirInfo = new DirectoryInfo(dir);
-
-            foreach (FileInfo file in dirInfo.GetFiles())
+            try
             {
-                file.Delete();
+                DirectoryInfo dirInfo = new DirectoryInfo(dir);
+
+                foreach (FileInfo file in dirInfo.GetFiles())
+                {
+                    file.Delete();
+                }
+                return true;
+            }
+            catch (Exception ex) {
+                mainWindowHandle.Log(ErrorType.Error, ex.Message);
+                return false;
             }
         }
 

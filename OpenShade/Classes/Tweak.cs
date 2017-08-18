@@ -201,6 +201,12 @@ namespace OpenShade.Classes
             //
             // -----------------------
 
+            newTweak = new Tweak("LIGHTING_AUTOGEN_LIGHTING", Category.Lighting, "Objects lighting", "", false, new List<Parameter>() { });
+            newTweak.parameters.Add(new Parameter("SunAmbientCoeff", "Ambient sunlight ratio", 0.65, 0.65, 0.1, 5, UIType.Text));
+            newTweak.parameters.Add(new Parameter("SunDiffuseCoeff", "Diffuse sunlight ratio", 1, 1, 0.1, 5, UIType.Text));
+            newTweak.parameters.Add(new Parameter("MoonAmbientCoeff", "Ambient moonlight ratio", 1, 1, 0.1, 5, UIType.Text));
+            newTweak.parameters.Add(new Parameter("MoonDiffuseCoeff", "Diffuse moonlight ratio", 1, 1, 0.1, 5, UIType.Text));
+            tweaks.Add(newTweak);
 
             newTweak = new Tweak("LIGHTING_AIRCRAFT_LIGHTING", Category.Lighting, "Aircraft lighting and saturation", "", false, new List<Parameter>() { });
             newTweak.parameters.Add(new Parameter("SunAmbientCoeff", "Ambient sunlight ratio", 1, 1, 0.1, 5, UIType.Text));
@@ -215,14 +221,7 @@ namespace OpenShade.Classes
             newTweak.parameters.Add(new Parameter("LightsRatio", "Lights ratio", 1, 1, 0.1, 5, UIType.Text));
             newTweak.parameters.Add(new Parameter("AutogenRatio", "Autogen ratio", 1, 1, 0.1, 5, UIType.Text));
             newTweak.parameters.Add(new Parameter("SmoothTransition", "Smooth day-night transition for lights", 0, 0, 0, 1, UIType.Checkbox));
-            tweaks.Add(newTweak);
-
-            newTweak = new Tweak("LIGHTING_AUTOGEN_LIGHTING", Category.Lighting, "Objects lighting", "", false, new List<Parameter>() { });
-            newTweak.parameters.Add(new Parameter("SunAmbientCoeff", "Ambient sunlight ratio", 0.65, 0.65, 0.1, 5, UIType.Text));
-            newTweak.parameters.Add(new Parameter("SunDiffuseCoeff", "Diffuse sunlight ratio", 1, 1, 0.1, 5, UIType.Text));
-            newTweak.parameters.Add(new Parameter("MoonAmbientCoeff", "Ambient moonlight ratio", 1, 1, 0.1, 5, UIType.Text));
-            newTweak.parameters.Add(new Parameter("MoonDiffuseCoeff", "Diffuse moonlight ratio", 1, 1, 0.1, 5, UIType.Text));
-            tweaks.Add(newTweak);
+            tweaks.Add(newTweak);            
 
             newTweak = new Tweak("LIGHTING_SPECULAR_LIGHTING", Category.Lighting, "Specular lighting", "", false, new List<Parameter>() { });
             newTweak.parameters.Add(new Parameter("SpecularRatio", "Ratio", 1, 1, 0.1, 4, UIType.Text));
