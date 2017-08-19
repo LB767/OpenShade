@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Weavers>
+  <Costura IncludeDebugSymbols='false' >
+    <IncludeAssemblies>
+        Microsoft.WindowsAPICodePack
+        Microsoft.WindowsAPICodePack.ExtendedLinguisticServices
+		Microsoft.WindowsAPICodePack.Sensors
+		Microsoft.WindowsAPICodePack.Shell
+		Microsoft.WindowsAPICodePack.ShellExtensions
+    </IncludeAssemblies>
+</Costura>
+</Weavers>

@@ -47,7 +47,7 @@ namespace OpenShade
 
         FileIO fileData;
         string shaderDirectory;
-        string backupDirectory;
+        public string backupDirectory;
 
         public string presetPath;
         public string presetName;
@@ -76,6 +76,14 @@ namespace OpenShade
             PropertyGroupDescription groupDescription = new PropertyGroupDescription("category");
             tweaksView.GroupDescriptions.Add(groupDescription);
 
+            CustomTweakShaderFile_ComboBox.Items.Add(FileIO.cloudFile);
+            CustomTweakShaderFile_ComboBox.Items.Add(FileIO.generalFile);
+            CustomTweakShaderFile_ComboBox.Items.Add(FileIO.terrainFile);
+            CustomTweakShaderFile_ComboBox.Items.Add(FileIO.funclibFile);
+            CustomTweakShaderFile_ComboBox.Items.Add(FileIO.terrainFXHFile);
+            CustomTweakShaderFile_ComboBox.Items.Add(FileIO.shadowFile);
+            CustomTweakShaderFile_ComboBox.Items.Add(FileIO.HDRFile);
+
             // Shaders files
             string P3DDirectory = (string)Registry.GetValue(@"HKEY_CURRENT_USER\Software\Lockheed Martin\Prepar3D v4", "AppPath", null);
             if (P3DDirectory == null)
@@ -88,7 +96,6 @@ namespace OpenShade
             if (index >= 0) { P3DDirectory = P3DDirectory.Substring(0, index); }
 
             P3DMain_TextBox.Text = P3DDirectory;
-            P3DMain_TextBox.IsEnabled = false;
 
             shaderDirectory = P3DDirectory + "ShadersHLSL\\";
 
@@ -98,7 +105,6 @@ namespace OpenShade
                 return;
             }
             P3DShaders_TextBox.Text = shaderDirectory;
-            P3DShaders_TextBox.IsEnabled = false;
 
             if (!Directory.Exists(cacheDirectory))
             {
@@ -106,64 +112,21 @@ namespace OpenShade
                 return;
             }
             ShaderCache_TextBox.Text = cacheDirectory;
-            ShaderCache_TextBox.IsEnabled = false;
+
+            backupDirectory = currentDirectory + "\\Backup Shaders\\"; // Default directory
 
             fileData = new FileIO(this);
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            // Load settings first
             if (File.Exists(currentDirectory + "\\" + FileIO.settingsFile))
             {
                 fileData.LoadSettings(currentDirectory + "\\" + FileIO.settingsFile);
             }
 
-            Theme_ComboBox.ItemsSource = Enum.GetValues(typeof(Themes)).Cast<Themes>();
-            Theme_ComboBox.SelectedItem = ((App)Application.Current).CurrentTheme;
-
-            backupDirectory = currentDirectory + "\\Backup Shaders\\";
-
-            if (!Directory.Exists(backupDirectory))
-            {
-                if (Directory.Exists(shaderDirectory))
-                {
-                    MessageBoxResult result = MessageBox.Show("OpenShade will backup your Prepar3D shaders now.\r\nMake sure the files are the original ones!", "Backup", MessageBoxButton.OKCancel, MessageBoxImage.Exclamation, MessageBoxResult.OK);
-                    if (result == MessageBoxResult.OK)
-                    {
-                        Directory.CreateDirectory("Backup Shaders");
-                        if (fileData.CopyShaderFiles(shaderDirectory, backupDirectory))
-                        {
-                            Log(ErrorType.None, "Shaders backed up");
-                        }
-                    }
-                    else
-                    {
-                        Log(ErrorType.Warning, "Shaders were not backed up. OpenShade can not run.");
-                        NewPreset_btn.IsEnabled = false;
-                        OpenPreset_btn.IsEnabled = false;
-                        SavePreset_btn.IsEnabled = false;
-                        SavePresetAs_btn.IsEnabled = false;
-                        ApplyPreset_btn.IsEnabled = false;
-                        ResetShaderFiles_btn.IsEnabled = false;
-                        ClearShaders_btn.IsEnabled = false;
-
-                        return;
-                    }
-                }
-            }
-            ShaderBackup_TextBox.Text = backupDirectory;
-            ShaderBackup_TextBox.IsEnabled = false;
-
-            fileData.LoadShaderFiles(backupDirectory);
-
-            CustomTweakShaderFile_ComboBox.Items.Add(FileIO.cloudFile);
-            CustomTweakShaderFile_ComboBox.Items.Add(FileIO.generalFile);
-            CustomTweakShaderFile_ComboBox.Items.Add(FileIO.terrainFile);
-            CustomTweakShaderFile_ComboBox.Items.Add(FileIO.funclibFile);
-            CustomTweakShaderFile_ComboBox.Items.Add(FileIO.terrainFXHFile);
-            CustomTweakShaderFile_ComboBox.Items.Add(FileIO.shadowFile);
-            CustomTweakShaderFile_ComboBox.Items.Add(FileIO.HDRFile);
-
+            // Load preset
             if (presetPath != null)
             {
                 if (File.Exists(presetPath))
@@ -175,6 +138,50 @@ namespace OpenShade
                     Log(ErrorType.Error, "Active Preset file [" + presetName + "] not found");
                 }
             }
+       
+            // Load Theme
+            Theme_ComboBox.ItemsSource = Enum.GetValues(typeof(Themes)).Cast<Themes>();
+            Theme_ComboBox.SelectedItem = ((App)Application.Current).CurrentTheme;
+            
+            ShaderBackup_TextBox.Text = backupDirectory;
+
+            if (Directory.Exists(backupDirectory))
+            {
+                if (fileData.CheckShaderBackup(backupDirectory))
+                {
+                    fileData.LoadShaderFiles(backupDirectory);
+                }
+                else
+                {
+                    Log(ErrorType.Error, "Missing shader files in " + backupDirectory + ". OpenShade can not run");
+                    ChangeMenuBarState(false);
+                }
+            }
+            else {
+
+                if (Directory.Exists(shaderDirectory)) // This better be true
+                {
+                    MessageBoxResult result = MessageBox.Show("OpenShade will backup your Prepar3D shaders now.\r\nMake sure the files are the original ones!", "Backup", MessageBoxButton.OKCancel, MessageBoxImage.Exclamation, MessageBoxResult.OK);
+                    if (result == MessageBoxResult.OK)
+                    {
+                        Directory.CreateDirectory("Backup Shaders");
+                        if (fileData.CopyShaderFiles(shaderDirectory, backupDirectory))
+                        {
+                            Log(ErrorType.None, "Shaders backed up");                            
+                        }
+                        else
+                        {
+                            Log(ErrorType.Warning, "Shaders could not be backed up. OpenShade can not run.");
+                            ChangeMenuBarState(false);
+                        }
+                    }
+                    else
+                    {
+                        Log(ErrorType.Warning, "Shaders were not backed up. OpenShade can not run.");
+                        ChangeMenuBarState(false);
+                    }
+                }
+            }        
         }
 
         private void Window_Closed(object sender, EventArgs e) // important to use Closed() and not Closing() because this has to happen after any LostFocus() event to have all up-to-date parameters
@@ -708,6 +715,35 @@ namespace OpenShade
             if (IsLoaded)
             {
                 ((App)Application.Current).ChangeTheme((Themes)Theme_ComboBox.SelectedItem);
+            }
+        }
+
+        private void ShaderBackup_Button_Click(object sender, RoutedEventArgs e)
+        {
+            Microsoft.WindowsAPICodePack.Dialogs.CommonOpenFileDialog dlg = new Microsoft.WindowsAPICodePack.Dialogs.CommonOpenFileDialog();
+
+            dlg.IsFolderPicker = true;
+            dlg.Multiselect = false;
+            dlg.InitialDirectory = Directory.GetCurrentDirectory();
+            dlg.Title = "Browse Backup Shader directory";
+                       
+            var result = dlg.ShowDialog();
+
+            if (result == Microsoft.WindowsAPICodePack.Dialogs.CommonFileDialogResult.Ok)
+            {
+                backupDirectory = dlg.FileName + "\\";
+                if (fileData.CheckShaderBackup(backupDirectory))
+                {
+                    ChangeMenuBarState(true);
+                    ShaderBackup_TextBox.Text = backupDirectory;
+                    Log(ErrorType.None, "All shader files found");
+                    Log(ErrorType.None, "Backup directory set to " + backupDirectory);
+                }
+                else {
+                    ChangeMenuBarState(false);
+                    ShaderBackup_TextBox.Text = backupDirectory;
+                    Log(ErrorType.Error, "Missing shader files in " + backupDirectory + ". OpenShade can not run");
+                }
             }
         }
         #endregion
@@ -1837,6 +1873,18 @@ float3 blur_ori;
             {
                 Log(ErrorType.Error, "Could not clear shader cache.");
             }
+        }
+
+
+        public void ChangeMenuBarState(bool enable)
+        {
+            NewPreset_btn.IsEnabled = enable;
+            OpenPreset_btn.IsEnabled = enable;
+            SavePreset_btn.IsEnabled = enable;
+            SavePresetAs_btn.IsEnabled = enable;
+            ApplyPreset_btn.IsEnabled = enable;
+            ResetShaderFiles_btn.IsEnabled = enable;
+            ClearShaders_btn.IsEnabled = enable;
         }
 
         public void Log(ErrorType type, string message)

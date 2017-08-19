@@ -48,6 +48,17 @@ namespace OpenShade.Classes
             }
         }
 
+        public bool CheckShaderBackup(string dir) {
+            if (File.Exists(dir + cloudFile) == false) { return false; }
+            if (File.Exists(dir + generalFile) == false) { return false; }
+            if (File.Exists(dir + terrainFile) == false) { return false; }
+            if (File.Exists(dir + funclibFile) == false) { return false; }
+            if (File.Exists(dir + terrainFXHFile) == false) { return false; }
+            if (File.Exists(dir + shadowFile) == false) { return false; }
+            if (File.Exists(dir + HDRFile) == false) { return false; }
+
+            return true;
+        }
 
         public bool CopyShaderFiles(string origin, string destination)
         {
@@ -315,6 +326,10 @@ namespace OpenShade.Classes
                             }
                             break;
 
+                        case "Backup_Directory":
+                            mainWindowHandle.backupDirectory = parts[1].Trim();
+                            break;
+
                         case "Main_Width":
                             mainWindowHandle.Width = double.Parse(parts[1].Trim());
                             break;
@@ -345,13 +360,17 @@ namespace OpenShade.Classes
         {
             List<string> lines = new List<string>();
 
-            if (mainWindowHandle.presetPath != null) lines.Add("Preset, " + mainWindowHandle.presetPath);
-            lines.Add("Theme, " + ((App)Application.Current).CurrentTheme.ToString());
-            lines.Add("Main_Width, " + mainWindowHandle.Width.ToString());
-            lines.Add("Main_Height, " + mainWindowHandle.Height.ToString());
-            lines.Add("Col1_Width, " + mainWindowHandle.Tweaks_Grid.ColumnDefinitions[0].Width.ToString());
-            lines.Add("Col2_Width, " + mainWindowHandle.Post_Grid.ColumnDefinitions[0].Width.ToString());
-            lines.Add("Col3_Width, " + mainWindowHandle.Custom_Grid.ColumnDefinitions[0].Width.ToString());
+            if (mainWindowHandle.presetPath != null)
+            {
+                lines.Add("Preset, " + mainWindowHandle.presetPath);
+                lines.Add("Theme, " + ((App)Application.Current).CurrentTheme.ToString());
+                lines.Add("Backup_Directory, " + mainWindowHandle.backupDirectory);
+                lines.Add("Main_Width, " + mainWindowHandle.Width.ToString());
+                lines.Add("Main_Height, " + mainWindowHandle.Height.ToString());
+                lines.Add("Col1_Width, " + mainWindowHandle.Tweaks_Grid.ColumnDefinitions[0].Width.ToString());
+                lines.Add("Col2_Width, " + mainWindowHandle.Post_Grid.ColumnDefinitions[0].Width.ToString());
+                lines.Add("Col3_Width, " + mainWindowHandle.Custom_Grid.ColumnDefinitions[0].Width.ToString());
+            }
 
             try
             {
