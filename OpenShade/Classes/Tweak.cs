@@ -126,27 +126,34 @@ namespace OpenShade.Classes
         }
     }
 
-    public class Tweak
-    {
+    public class BaseTweak {
         public string key;
-        public Category category { get; set; }
         public string name { get; set; }
         public string description { get; set; }
-        public bool isEnabled { get; set; }        
+        public bool isEnabled { get; set; }
         public List<Parameter> parameters { get; set; }
+
+        public BaseTweak(string Key, string Name, string Descr, bool IsOn, List<Parameter> Params)
+        {
+            key = Key;           
+            name = Name;
+            description = Descr;
+            isEnabled = IsOn;
+            parameters = Params;
+        }
+    }
+
+    public class Tweak : BaseTweak
+    {   
+        public Category category { get; set; }
 
         //public ChangeType tweakType;
         //public string referenceCode;
         //public string newCode;
 
-        public Tweak(string Key, Category Cat, string Name, string Descr, bool IsOn, List<Parameter> Params)
+        public Tweak(string Key, Category Cat, string Name, string Descr, bool IsOn, List<Parameter> Params) : base(Key, Name, Descr, IsOn, Params)
         {
-            key = Key;
-            category = Cat;
-            name = Name;
-            description = Descr;
-            isEnabled = IsOn;
-            parameters = Params;
+            this.category = Cat;
         }
 
         public static void GenerateTweaksData(List<Tweak> tweaks)
@@ -361,23 +368,13 @@ namespace OpenShade.Classes
         public event PropertyChangedEventHandler PropertyChanged;
     }
 
-    public class PostProcess
+    public class PostProcess : BaseTweak
     {
-        public string key;
-        public string name { get; set; }
         public int index;
-        public string description { get; set; }
-        public bool isEnabled { get; set; }
-        public List<Parameter> parameters { get; set; }
 
-        public PostProcess(string Key, string Name, int Idx, bool IsOn, List<Parameter> Params, string Descr)
+        public PostProcess(string Key, string Name, int Idx, bool IsOn, List<Parameter> Params, string Descr) : base(Key, Name, Descr, IsOn, Params)
         {
-            key = Key;
-            name = Name;
             index = Idx;
-            description = Descr;
-            isEnabled = IsOn;
-            parameters = Params;
         }
 
         public static void GeneratePostProcessData(List<PostProcess> postProcesses)

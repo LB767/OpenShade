@@ -84,6 +84,8 @@ namespace OpenShade
             CustomTweakShaderFile_ComboBox.Items.Add(FileIO.shadowFile);
             CustomTweakShaderFile_ComboBox.Items.Add(FileIO.HDRFile);
 
+            fileData = new FileIO(this);
+
             // Shaders files
             string P3DDirectory = (string)Registry.GetValue(@"HKEY_CURRENT_USER\Software\Lockheed Martin\Prepar3D v4", "AppPath", null);
             if (P3DDirectory == null)
@@ -114,8 +116,6 @@ namespace OpenShade
             ShaderCache_TextBox.Text = cacheDirectory;
 
             backupDirectory = currentDirectory + "\\Backup Shaders\\"; // Default directory
-
-            fileData = new FileIO(this);
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -322,7 +322,7 @@ namespace OpenShade
 
                 // oh dear, starting to do JS crap, that is nasty
                 // TODO: Make a common class type tweak so then basetweak and postprocess should inherit it so I don't have to do this dynamic insanity
-                dynamic selectedEffect;
+                BaseTweak selectedEffect;
 
                 if (type == typeof(Tweak))
                 {
@@ -500,6 +500,7 @@ namespace OpenShade
             TabItem currentTab = HelperFunctions.FindAncestorOrSelf<TabItem>(checkbox);
             Parameter param = null;
 
+            // TODO: Shouldn't need this anymore with the base class
             switch (currentTab.Header.ToString())
             {
                 case "Tweaks":
