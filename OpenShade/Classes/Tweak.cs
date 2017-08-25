@@ -48,6 +48,7 @@ namespace OpenShade.Classes
         public decimal max;
         public List<string> range;
         public UIType control;
+        public bool hasChanged = false;
 
         public Parameter() { }
 

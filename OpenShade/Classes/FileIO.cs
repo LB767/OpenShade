@@ -118,6 +118,8 @@ namespace OpenShade.Classes
                 {  
                     foreach (var param in tweak.parameters)
                     {
+                        string oldValue = param.value;
+
                         if (param.control == UIType.RGB)
                         {
                             string dataR = param.dataName.Split(',')[0];
@@ -130,6 +132,10 @@ namespace OpenShade.Classes
                         {
                             param.value = pref.Read(param.dataName, tweak.key);
                         }
+
+                        if (param.value != oldValue) {
+                            param.hasChanged = true;
+                        }
                     }
                 }
             }           
@@ -137,6 +143,8 @@ namespace OpenShade.Classes
 
         public void LoadCustomTweaks(ObservableCollection<CustomTweak> customTweaks, IniFile pref)
         {
+            // TODO: Find a decent way to check if there are changes between the new loaded custom tweaks and the old ones
+
             customTweaks.Clear();
             int count = 0;
             string section = "CUSTOM_TWEAK" + count.ToString();
@@ -146,7 +154,7 @@ namespace OpenShade.Classes
             {
                 var newTweak = new CustomTweak(section, 
                     pref.Read("Name", section),
-                    Path.GetFileName(pref.Read("Shader", section)), // to remove Post-Process for HDR file
+                    Path.GetFileName(pref.Read("Shader", section)), // to remove Post-Process// directory for HDR file
                     int.Parse(pref.Read("Index", section)),
                     pref.Read("OldPattern", section).FromHexString(),
                     pref.Read("NewPattern", section).FromHexString(),
@@ -175,6 +183,8 @@ namespace OpenShade.Classes
                 {
                     foreach (var param in post.parameters)
                     {
+                        string oldValue = param.value;
+
                         if (param.control == UIType.RGB)
                         {
                             string dataR = param.dataName.Split(',')[0];
@@ -191,6 +201,10 @@ namespace OpenShade.Classes
                         {
                             string identifiedLine = lines.First(p => p.StartsWith(param.dataName));
                             param.value = identifiedLine.Split('=')[1];
+                        }
+
+                        if (param.value != oldValue) {
+                            param.hasChanged = true;
                         }
                     }
                 }

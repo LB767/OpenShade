@@ -61,9 +61,11 @@ namespace OpenShade
 
             Log_RichTextBox.Document.Blocks.Clear();
 
+            // Init
             tweaks = new List<Tweak>() { };
             customTweaks = new ObservableCollection<CustomTweak>() { };
             postProcesses = new List<PostProcess>() { };
+            comment = "";
 
             Tweak.GenerateTweaksData(tweaks);
             PostProcess.GeneratePostProcessData(postProcesses);
@@ -86,11 +88,18 @@ namespace OpenShade
 
             fileData = new FileIO(this);
 
+            tweaksHash = HelperFunctions.GetDictHashCode(typeof(Tweak), tweaks);
+            customTweaksHash = HelperFunctions.GetDictHashCode(typeof(CustomTweak), customTweaks);
+            postProcessesHash = HelperFunctions.GetDictHashCode(typeof(PostProcess), postProcesses);
+            commentHash = comment;
+
+
             // Shaders files
             string P3DDirectory = (string)Registry.GetValue(@"HKEY_CURRENT_USER\Software\Lockheed Martin\Prepar3D v4", "AppPath", null);
             if (P3DDirectory == null)
             {
                 Log(ErrorType.Error, "Prepar3D v4 path not found");
+                ChangeMenuBarState(false);
                 return;
             }
 
@@ -104,6 +113,7 @@ namespace OpenShade
             if (!Directory.Exists(shaderDirectory))
             {
                 Log(ErrorType.Error, "P3D shader directory not found");
+                ChangeMenuBarState(false);
                 return;
             }
             P3DShaders_TextBox.Text = shaderDirectory;
@@ -111,6 +121,7 @@ namespace OpenShade
             if (!Directory.Exists(cacheDirectory))
             {
                 Log(ErrorType.Error, "Shader cache directory not found");
+                ChangeMenuBarState(false);
                 return;
             }
             ShaderCache_TextBox.Text = cacheDirectory;
@@ -320,17 +331,15 @@ namespace OpenShade
                 StackGrid.Children.Clear();
                 clearStack.Children.Clear();
 
-                // oh dear, starting to do JS crap, that is nasty
-                // TODO: Make a common class type tweak so then basetweak and postprocess should inherit it so I don't have to do this dynamic insanity
-                BaseTweak selectedEffect;
+                BaseTweak selectedEffect = (BaseTweak)itemListview.SelectedItem;
 
-                if (type == typeof(Tweak))
-                {
-                    selectedEffect = (Tweak)itemListview.SelectedItem;
-                }
-                else {
-                    selectedEffect = (PostProcess)itemListview.SelectedItem;
-                }
+                //if (type == typeof(Tweak))
+                //{
+                //    selectedEffect = (Tweak)itemListview.SelectedItem;
+                //}
+                //else {
+                //    selectedEffect = (PostProcess)itemListview.SelectedItem;
+                //}
 
                 titleBlock.Content = selectedEffect.name;
                 descriptionBlock.Text = selectedEffect.description;
@@ -353,7 +362,6 @@ namespace OpenShade
 
                     foreach (Parameter param in selectedEffect.parameters)
                     {
-
                         TextBlock txtBlock = new TextBlock();
                         txtBlock.Text = param.name;
                         txtBlock.TextWrapping = TextWrapping.Wrap;
@@ -500,7 +508,6 @@ namespace OpenShade
             TabItem currentTab = HelperFunctions.FindAncestorOrSelf<TabItem>(checkbox);
             Parameter param = null;
 
-            // TODO: Shouldn't need this anymore with the base class
             switch (currentTab.Header.ToString())
             {
                 case "Tweaks":
