@@ -199,15 +199,12 @@ namespace OpenShade.Classes
                 {
                     hash += effect.name;
                     hash += effect.isEnabled.ToString();
-
-                    if (effect.parameters != null)
+                   
+                    foreach (var param in effect.parameters)
                     {
-                        foreach (var param in effect.parameters)
-                        {
-                            hash += param.name;
-                            hash += param.value;
-                        }
-                    }
+                        hash += param.name;
+                        hash += param.value;
+                    }                    
                 }
             }
             else if (type == typeof(CustomTweak))

@@ -49,8 +49,12 @@ namespace OpenShade
         string shaderDirectory;
         public string backupDirectory;
 
-        public string presetPath;
-        public string presetName;
+        public string activePresetPath;
+        IniFile activePreset;
+        public string loadedPresetPath;
+        IniFile loadedPreset;
+        //public string presetPath;
+        //public string presetName;
 
         // TODO: put this in a struct somewhere
         public static string cloudText, generalText, terrainText, funclibText, terrainFXHText, shadowText, HDRText;
@@ -138,15 +142,25 @@ namespace OpenShade
             }
 
             // Load preset
-            if (presetPath != null)
+            if (activePresetPath != null)
             {
-                if (File.Exists(presetPath))
+                if (File.Exists(activePresetPath))
                 {
-                    LoadPreset();
+                    try
+                    {
+                        activePreset = new IniFile(activePresetPath);
+                        loadedPreset = activePreset;
+                        LoadPreset(activePreset, false);
+                        Log(ErrorType.None, "Preset [" + activePreset.filename + "] loaded");
+                    }
+                    catch (Exception ex)
+                    {
+                        Log(ErrorType.Error, "Failed to load preset file [" + activePresetPath + "]. " + ex.Message);
+                    }
                 }
                 else
                 {
-                    Log(ErrorType.Error, "Active Preset file [" + presetName + "] not found");
+                    Log(ErrorType.Error, "Active Preset file [" + activePresetPath + "] not found");
                 }
             }
        
@@ -172,7 +186,7 @@ namespace OpenShade
 
                 if (Directory.Exists(shaderDirectory)) // This better be true
                 {
-                    MessageBoxResult result = MessageBox.Show("OpenShade will backup your Prepar3D shaders now.\r\nMake sure the files are the original ones!", "Backup", MessageBoxButton.OKCancel, MessageBoxImage.Exclamation, MessageBoxResult.OK);
+                    MessageBoxResult result = MessageBox.Show("OpenShade will backup your Prepar3D shaders now.\r\nMake sure the files are the original ones or click 'Cancel' and manually select your backup folder in the application settings.", "Backup", MessageBoxButton.OKCancel, MessageBoxImage.Exclamation, MessageBoxResult.OK); // TODO: Localization
                     if (result == MessageBoxResult.OK)
                     {
                         Directory.CreateDirectory("Backup Shaders");
@@ -331,20 +345,12 @@ namespace OpenShade
                 StackGrid.Children.Clear();
                 clearStack.Children.Clear();
 
-                BaseTweak selectedEffect = (BaseTweak)itemListview.SelectedItem;
-
-                //if (type == typeof(Tweak))
-                //{
-                //    selectedEffect = (Tweak)itemListview.SelectedItem;
-                //}
-                //else {
-                //    selectedEffect = (PostProcess)itemListview.SelectedItem;
-                //}
+                BaseTweak selectedEffect = (BaseTweak)itemListview.SelectedItem;                
 
                 titleBlock.Content = selectedEffect.name;
                 descriptionBlock.Text = selectedEffect.description;
 
-                if (selectedEffect.parameters != null)
+                if (selectedEffect.parameters.Count > 0)
                 {
                     StackGrid.Rows = selectedEffect.parameters.Count;
 
@@ -361,7 +367,7 @@ namespace OpenShade
                     clearStack.Children.Add(resetButton);
 
                     foreach (Parameter param in selectedEffect.parameters)
-                    {
+                    {                       
                         TextBlock txtBlock = new TextBlock();
                         txtBlock.Text = param.name;
                         txtBlock.TextWrapping = TextWrapping.Wrap;
@@ -433,6 +439,7 @@ namespace OpenShade
                             spinner.MinValue = param.min;
                             spinner.MaxValue = param.max;
                             spinner.Step = 0.1m;
+                            // spinner.Background = param.hasChanged ? Brushes.Green : (Brush)FindResource("BackgroundColor1"); TODO: Find something decent to do
                             spinner.LostFocus += new RoutedEventHandler(ParameterSpinner_LostFocus);
 
                             var item = new MenuItem();
@@ -491,6 +498,8 @@ namespace OpenShade
 
                             StackGrid.Children.Add(combo);
                         }
+
+                        param.hasChanged = false;
                     }
                 }
                 else
@@ -499,6 +508,9 @@ namespace OpenShade
                     label.Content = "No additional parameters";
                     StackGrid.Children.Add(label);
                 }
+
+                selectedEffect.stateChanged = false; // NOTE: This has to be here at the end, because this can raise a property change even in the tweak class,
+                                                     //       after parameters have has their 'hasChanged' cleared to 'false'
             }
         }
 
@@ -762,35 +774,31 @@ namespace OpenShade
             foreach (var tweak in tweaks)
             {
                 tweak.isEnabled = false;
-                if (tweak.parameters != null)
+                
+                foreach (var param in tweak.parameters)
                 {
-                    foreach (var param in tweak.parameters)
-                    {
-                        param.value = param.defaultValue;
-                    }
-                }
+                    param.value = param.defaultValue;
+                }                
             }
 
             foreach (var post in postProcesses)
             {
                 post.isEnabled = false;
-                if (post.parameters != null)
+                
+                foreach (var param in post.parameters)
                 {
-                    foreach (var param in post.parameters)
-                    {
-                        param.value = param.defaultValue;
-                    }
-                }
+                    param.value = param.defaultValue;
+                }                
             }
 
             PresetComments_TextBox.Text = "";
             customTweaks.Clear();
             CustomTweak_List.Items.Refresh();
 
-            presetName = "custom_preset";
-            presetPath = currentDirectory + "\\custom_preset.ini";
+            loadedPresetPath = currentDirectory + "\\custom_preset.ini";
+            loadedPreset = new IniFile(loadedPresetPath);
 
-            Log(ErrorType.None, "New Preset [" + presetName + "] created");
+            Log(ErrorType.None, "New Preset [" + loadedPreset.filename + "] created");
         }
 
         private void OpenPreset_Click(object sender, RoutedEventArgs e)
@@ -811,60 +819,55 @@ namespace OpenShade
             if (result.HasValue && result.Value)
             {
                 // Load preset
-                presetPath = dlg.FileName;
-                presetName = System.IO.Path.GetFileNameWithoutExtension(presetPath);
-
-                LoadPreset();
+                try
+                {
+                    loadedPresetPath = dlg.FileName;
+                    loadedPreset = new IniFile(loadedPresetPath);
+                    LoadPreset(loadedPreset, true);
+                    Log(ErrorType.None, "Preset [" + loadedPreset.filename + "] loaded");
+                }
+                catch (Exception ex)
+                {
+                    // TODO: What do we do? Do we reset as if it wasn't loaded or put the app in "error state"?
+                    Log(ErrorType.Error, "Failed to load preset file [" + loadedPresetPath + "]. " + ex.Message);
+                }    
             }
         }
 
-        private void LoadPreset()
-        {
-            try
-            {
-                IniFile pref = new IniFile(presetPath);
+        private void LoadPreset(IniFile preset, bool monitorChanges)
+        {             
+            fileData.LoadTweaks(tweaks, preset, monitorChanges);
+            fileData.LoadCustomTweaks(customTweaks, preset, monitorChanges);
+            fileData.LoadPostProcesses(postProcesses, preset, monitorChanges);
+            PresetComments_TextBox.Text = fileData.LoadComments(preset);
 
-                fileData.LoadTweaks(tweaks, pref);
-                fileData.LoadCustomTweaks(customTweaks, pref);
-                fileData.LoadPostProcesses(postProcesses, pref);
-                PresetComments_TextBox.Text = fileData.LoadComments(pref);
+            tweaksHash = HelperFunctions.GetDictHashCode(typeof(Tweak), tweaks);
+            customTweaksHash = HelperFunctions.GetDictHashCode(typeof(CustomTweak), customTweaks);
+            postProcessesHash = HelperFunctions.GetDictHashCode(typeof(PostProcess), postProcesses);
+            commentHash = comment;
 
-                tweaksHash = HelperFunctions.GetDictHashCode(typeof(Tweak), tweaks);
-                customTweaksHash = HelperFunctions.GetDictHashCode(typeof(CustomTweak), customTweaks);
-                postProcessesHash = HelperFunctions.GetDictHashCode(typeof(PostProcess), postProcesses);
-                commentHash = comment;
-
-                Tweak_List.Items.Refresh();
-                PostProcess_List.Items.Refresh();
-                CustomTweak_List.Items.Refresh();
-
-                Log(ErrorType.None, "Preset [" + presetName + "] loaded");
-
-            }
-            catch (Exception ex)
-            {
-                Log(ErrorType.Error, "Failed to load preset file [" + presetName + "]. " + ex.Message);
-            }
+            Tweak_List.Items.Refresh();
+            PostProcess_List.Items.Refresh();
+            CustomTweak_List.Items.Refresh();                     
         }
 
         private void SavePreset_Click(object sender, RoutedEventArgs e)
         {
-            IniFile pref = new IniFile(presetPath);
             try
             {
                 comment = PresetComments_TextBox.Text;
-                fileData.SavePreset(presetPath, tweaks, customTweaks, postProcesses, comment, pref);
+                fileData.SavePreset(tweaks, customTweaks, postProcesses, comment, loadedPreset);
 
                 tweaksHash = HelperFunctions.GetDictHashCode(typeof(Tweak), tweaks);
                 customTweaksHash = HelperFunctions.GetDictHashCode(typeof(CustomTweak), customTweaks);
                 postProcessesHash = HelperFunctions.GetDictHashCode(typeof(PostProcess), postProcesses);
                 commentHash = comment;
 
-                Log(ErrorType.None, "Preset [" + presetName + "] saved in " + presetPath);
+                Log(ErrorType.None, "Preset [" + loadedPreset.filename + "] saved in " + loadedPreset.filepath);
             }
             catch (Exception ex)
             {
-                Log(ErrorType.Error, "Failed to save preset file [" + presetName + "]. " + ex.Message);
+                Log(ErrorType.Error, "Failed to save preset file [" + loadedPreset.filename + "]. " + ex.Message);
             }
         }
 
@@ -879,24 +882,25 @@ namespace OpenShade
 
             if (result.HasValue && result.Value && dlg.FileName != "")
             {
-                presetPath = dlg.FileName;
-                presetName = System.IO.Path.GetFileNameWithoutExtension(presetPath);
-                IniFile pref = new IniFile(presetPath);
+                string newPresetPath = dlg.FileName;
+                IniFile newPreset = new IniFile(newPresetPath);
                 try
                 {
                     comment = PresetComments_TextBox.Text;
-                    fileData.SavePreset(presetPath, tweaks, customTweaks, postProcesses, comment, pref);
+                    fileData.SavePreset(tweaks, customTweaks, postProcesses, comment, newPreset);
 
                     tweaksHash = HelperFunctions.GetDictHashCode(typeof(Tweak), tweaks);
                     customTweaksHash = HelperFunctions.GetDictHashCode(typeof(CustomTweak), customTweaks);
                     postProcessesHash = HelperFunctions.GetDictHashCode(typeof(PostProcess), postProcesses);
                     commentHash = comment;
 
-                    Log(ErrorType.None, "Preset [" + presetName + "] saved in " + presetPath);
+                    loadedPresetPath = newPresetPath;
+                    loadedPreset = newPreset;
+                    Log(ErrorType.None, "Preset [" + loadedPreset.filename + "] saved in " + loadedPreset.filepath);
                 }
                 catch (Exception ex)
                 {
-                    Log(ErrorType.Error, "Failed to save preset file [" + presetName + "]. " + ex.Message);
+                    Log(ErrorType.Error, "Failed to save preset file [" + loadedPreset.filename + "]. " + ex.Message);
                 }
             }
         }
@@ -1830,8 +1834,9 @@ float3 blur_ori;
                 return;
             }
 
-            Log(ErrorType.None, "Preset [" + presetName + "] applied");
-
+            activePresetPath = loadedPresetPath;
+            activePreset = loadedPreset;
+            Log(ErrorType.None, "Preset [" + activePreset.filename + "] applied");
         }
 
         private void ResetShaderFiles(object sender, RoutedEventArgs e)
@@ -1849,25 +1854,19 @@ float3 blur_ori;
         private void ResetSettings_Click(object sender, RoutedEventArgs e)
         {
             foreach (var tweak in tweaks)
-            {
-                if (tweak.parameters != null)
+            {                
+                foreach (var param in tweak.parameters)
                 {
-                    foreach (var param in tweak.parameters)
-                    {
-                        param.value = param.defaultValue;
-                    }
-                }
+                    param.value = param.defaultValue;
+                }                
             }
 
             foreach (var post in postProcesses)
-            {
-                if (post.parameters != null)
+            {               
+                foreach (var param in post.parameters)
                 {
-                    foreach (var param in post.parameters)
-                    {
-                        param.value = param.defaultValue;
-                    }
-                }
+                    param.value = param.defaultValue;
+                }                
             }
         }
 

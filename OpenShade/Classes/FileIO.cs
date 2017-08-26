@@ -109,39 +109,63 @@ namespace OpenShade.Classes
         }
 
 
-        public void LoadTweaks(List<Tweak> tweaks, IniFile pref)
+        public void LoadTweaks(List<Tweak> tweaks, IniFile pref, bool monitorChanges)
         {
             foreach (var tweak in tweaks) {
-                tweak.isEnabled = pref.Read("IsActive", tweak.key) == "1" ? true : false;
-
-                if (tweak.parameters != null) // NOTE: Do this for now, maybe it'd be best to NOT have null lists but only empty ones, would need to change initialization!
-                {  
-                    foreach (var param in tweak.parameters)
-                    {
-                        string oldValue = param.value;
-
-                        if (param.control == UIType.RGB)
-                        {
-                            string dataR = param.dataName.Split(',')[0];
-                            string dataG = param.dataName.Split(',')[1];
-                            string dataB = param.dataName.Split(',')[2];
-
-                            param.value = pref.Read(dataR, tweak.key) + "," + pref.Read(dataG, tweak.key) + "," + pref.Read(dataB, tweak.key);
-                        }
-                        else
-                        {
-                            param.value = pref.Read(param.dataName, tweak.key);
-                        }
-
-                        if (param.value != oldValue) {
-                            param.hasChanged = true;
-                        }
-                    }
+                bool wasEnabled = tweak.isEnabled;
+                if (!pref.KeyExists("IsActive", tweak.key))
+                {
+                    mainWindowHandle.Log(ErrorType.Warning, "Missing entry 'IsActive' for tweak [" + tweak.key + "]");
+                    break;
                 }
+                tweak.isEnabled = pref.Read("IsActive", tweak.key) == "1" ? true : false;                
+
+                if (wasEnabled != tweak.isEnabled && monitorChanges)
+                {
+                    tweak.stateChanged = true;
+                }
+                else {
+                    tweak.stateChanged = false;
+                }
+                                
+                foreach (var param in tweak.parameters)
+                {
+                    string oldValue = param.value;
+
+                    if (param.control == UIType.RGB)
+                    {
+                        string dataR = param.dataName.Split(',')[0];
+                        string dataG = param.dataName.Split(',')[1];
+                        string dataB = param.dataName.Split(',')[2];
+
+                        if (!pref.KeyExists(dataR, tweak.key)) { mainWindowHandle.Log(ErrorType.Warning, "Missing entry '" + dataR + "' for tweak [" + tweak.key + "]"); break; }
+                        if (!pref.KeyExists(dataG, tweak.key)) { mainWindowHandle.Log(ErrorType.Warning, "Missing entry '" + dataG + "' for tweak [" + tweak.key + "]"); break; }
+                        if (!pref.KeyExists(dataB, tweak.key)) { mainWindowHandle.Log(ErrorType.Warning, "Missing entry '" + dataB + "' for tweak [" + tweak.key + "]"); break; }
+
+                        param.value = pref.Read(dataR, tweak.key) + "," + pref.Read(dataG, tweak.key) + "," + pref.Read(dataB, tweak.key);                                             
+                    }
+                    else
+                    {
+                        if (!pref.KeyExists(param.dataName, tweak.key))
+                        {
+                            mainWindowHandle.Log(ErrorType.Warning, "Missing entry '" + param.dataName + "' for tweak [" + tweak.key + "]");
+                            break;
+                        }
+                        param.value = pref.Read(param.dataName, tweak.key);
+                    }
+
+                    if (param.value != oldValue && monitorChanges) // TODO: In some cases this evaluates to false because of stuff like "1.0" != "1.00" ... not sure what's the best thing to do
+                    { 
+                        param.hasChanged = true;
+                    }
+                    else {
+                        param.hasChanged = false;
+                    }
+                }                
             }           
         }
 
-        public void LoadCustomTweaks(ObservableCollection<CustomTweak> customTweaks, IniFile pref)
+        public void LoadCustomTweaks(ObservableCollection<CustomTweak> customTweaks, IniFile pref, bool monitorChanges)
         {
             // TODO: Find a decent way to check if there are changes between the new loaded custom tweaks and the old ones
 
@@ -169,45 +193,66 @@ namespace OpenShade.Classes
 
         }
 
-        public void LoadPostProcesses(List<PostProcess> postProcesses, IniFile pref)
+        public void LoadPostProcesses(List<PostProcess> postProcesses, IniFile pref, bool monitorChanges)
         {
-            foreach (var post in postProcesses) {
+            foreach (var post in postProcesses)
+            {
+                bool wasEnabled = post.isEnabled;
+                if (!pref.KeyExists("IsActive", post.key))
+                {
+                    mainWindowHandle.Log(ErrorType.Warning, "Missing entry 'IsActive' for post-process [" + post.key + "]");
+                    break;
+                }
                 post.isEnabled = pref.Read("IsActive", post.key) == "1" ? true : false;
+
+                if (wasEnabled != post.isEnabled && monitorChanges)
+                {
+                    post.stateChanged = true;
+                }
+                else {
+                    post.stateChanged = false;
+                }
 
                 post.index = int.Parse(pref.Read("Index", post.key));
 
                 string rawParams = pref.Read("Params", post.key).FromHexString();
                 string[] lines = rawParams.Split(new string[] { "\r\n" }, StringSplitOptions.None);
 
-                if (post.parameters != null)
+                foreach (var param in post.parameters)
                 {
-                    foreach (var param in post.parameters)
+                    string oldValue = param.value;
+
+                    if (param.control == UIType.RGB)
                     {
-                        string oldValue = param.value;
+                        string dataR = param.dataName.Split(',')[0];
+                        string dataG = param.dataName.Split(',')[1];
+                        string dataB = param.dataName.Split(',')[2];
 
-                        if (param.control == UIType.RGB)
-                        {
-                            string dataR = param.dataName.Split(',')[0];
-                            string dataG = param.dataName.Split(',')[1];
-                            string dataB = param.dataName.Split(',')[2];
+                        string identifiedLineR = lines.FirstOrDefault(p => p.StartsWith(dataR));
+                        string identifiedLineG = lines.FirstOrDefault(p => p.StartsWith(dataG));
+                        string identifiedLineB = lines.FirstOrDefault(p => p.StartsWith(dataB));
 
-                            string identifiedLineR = lines.First(p => p.StartsWith(dataR));
-                            string identifiedLineG = lines.First(p => p.StartsWith(dataG));
-                            string identifiedLineB = lines.First(p => p.StartsWith(dataB));
+                        if (identifiedLineR == null) { mainWindowHandle.Log(ErrorType.Warning, "Missing entry '" + dataR + "' for post-process [" + post.key + "]"); break; }
+                        if (identifiedLineG == null) { mainWindowHandle.Log(ErrorType.Warning, "Missing entry '" + dataG + "' for post-process [" + post.key + "]"); break; }
+                        if (identifiedLineB == null) { mainWindowHandle.Log(ErrorType.Warning, "Missing entry '" + dataB + "' for post-process [" + post.key + "]"); break; }
 
-                            param.value = identifiedLineR.Split('=')[1] + "," + identifiedLineG.Split('=')[1] + "," + identifiedLineB.Split('=')[1];
-                        }
-                        else
-                        {
-                            string identifiedLine = lines.First(p => p.StartsWith(param.dataName));
-                            param.value = identifiedLine.Split('=')[1];
-                        }
-
-                        if (param.value != oldValue) {
-                            param.hasChanged = true;
-                        }
+                        param.value = identifiedLineR.Split('=')[1] + "," + identifiedLineG.Split('=')[1] + "," + identifiedLineB.Split('=')[1];
                     }
-                }
+                    else
+                    {
+                        string identifiedLine = lines.FirstOrDefault(p => p.StartsWith(param.dataName));
+                        if (identifiedLine == null) { mainWindowHandle.Log(ErrorType.Warning, "Missing entry '" + param.dataName + "' for post-process [" + post.key + "]"); break; }
+                        param.value = identifiedLine.Split('=')[1];
+                    }
+
+                    if (param.value != oldValue && monitorChanges)
+                    {
+                        param.hasChanged = true;
+                    }
+                    else {
+                        param.hasChanged = false;
+                    }
+                }                
             }
 
             // Reorder the list based on process index
@@ -215,96 +260,92 @@ namespace OpenShade.Classes
         }
 
         public string LoadComments(IniFile pref) {
-            string rawComment = pref.Read("Comment", "PRESET COMMENTS");
-            string result = rawComment.Replace("~^#", "\r\n");
-            return result;
+            if (pref.KeyExists("Comment", "PRESET COMMENTS")) {
+                string rawComment = pref.Read("Comment", "PRESET COMMENTS");
+                string result = rawComment.Replace("~^#", "\r\n");
+                return result;
+            }
+            return "";            
         }
 
-        public void SavePreset(string filepath, List<Tweak> tweaks, ObservableCollection<CustomTweak> customTweaks, List<PostProcess> postProcesses, string comment, IniFile pref)
+        public void SavePreset(List<Tweak> tweaks, ObservableCollection<CustomTweak> customTweaks, List<PostProcess> postProcesses, string comment, IniFile preset)
         {
             // Standard tweaks    
 
             foreach (var tweak in tweaks) {
-                pref.Write("IsActive", tweak.isEnabled ? "1" : "0", tweak.key);
+                preset.Write("IsActive", tweak.isEnabled ? "1" : "0", tweak.key);
 
-                if (tweak.parameters != null)
+                foreach (var param in tweak.parameters)
                 {
-                    foreach (var param in tweak.parameters)
+                    if (param.control == UIType.RGB)
                     {
-                        if (param.control == UIType.RGB)
-                        {
-                            string dataR = param.dataName.Split(',')[0];
-                            string dataG = param.dataName.Split(',')[1];
-                            string dataB = param.dataName.Split(',')[2];
+                        string dataR = param.dataName.Split(',')[0];
+                        string dataG = param.dataName.Split(',')[1];
+                        string dataB = param.dataName.Split(',')[2];
 
-                            string valueR = param.value.Split(',')[0];
-                            string valueG = param.value.Split(',')[1];
-                            string valueB = param.value.Split(',')[2];
+                        string valueR = param.value.Split(',')[0];
+                        string valueG = param.value.Split(',')[1];
+                        string valueB = param.value.Split(',')[2];
 
-                            pref.Write(dataR, valueR, tweak.key);
-                            pref.Write(dataG, valueG, tweak.key);
-                            pref.Write(dataB, valueB, tweak.key);
-                        }
-                        else
-                        {
-                            pref.Write(param.dataName, param.value, tweak.key);
-                        }
+                        preset.Write(dataR, valueR, tweak.key);
+                        preset.Write(dataG, valueG, tweak.key);
+                        preset.Write(dataB, valueB, tweak.key);
                     }
-                }
+                    else
+                    {
+                        preset.Write(param.dataName, param.value, tweak.key);
+                    }
+                }                
             }       
 
             // Custom tweaks
 
             foreach (var custom in customTweaks)
             {
-                pref.Write("IsActive", custom.isEnabled ? "1" : "0", custom.key);
-                pref.Write("Name", custom.name, custom.key);
-                pref.Write("Shader", custom.shaderFile, custom.key);
-                pref.Write("Index", custom.index.ToString(), custom.key);
-                pref.Write("OldPattern", custom.oldCode.ToHexString(), custom.key);
-                pref.Write("NewPattern", custom.newCode.ToHexString(), custom.key);                
+                preset.Write("IsActive", custom.isEnabled ? "1" : "0", custom.key);
+                preset.Write("Name", custom.name, custom.key);
+                preset.Write("Shader", custom.shaderFile, custom.key);
+                preset.Write("Index", custom.index.ToString(), custom.key);
+                preset.Write("OldPattern", custom.oldCode.ToHexString(), custom.key);
+                preset.Write("NewPattern", custom.newCode.ToHexString(), custom.key);                
             }
 
             // Post-Process
             
             foreach (var post in postProcesses)
             {
-                pref.Write("IsActive", post.isEnabled ? "1" : "0", post.key);
-                pref.Write("Index", post.index.ToString(), post.key);
+                preset.Write("IsActive", post.isEnabled ? "1" : "0", post.key);
+                preset.Write("Index", post.index.ToString(), post.key);
 
                 string finalString = "";
 
-                if (post.parameters != null)
+                foreach (var param in post.parameters)
                 {
-                    foreach (var param in post.parameters)
+                    if (param.control == UIType.RGB)
                     {
-                        if (param.control == UIType.RGB)
-                        {
-                            string dataR = param.dataName.Split(',')[0];
-                            string dataG = param.dataName.Split(',')[1];
-                            string dataB = param.dataName.Split(',')[2];
+                        string dataR = param.dataName.Split(',')[0];
+                        string dataG = param.dataName.Split(',')[1];
+                        string dataB = param.dataName.Split(',')[2];
 
-                            string valueR = param.value.Split(',')[0];
-                            string valueG = param.value.Split(',')[1];
-                            string valueB = param.value.Split(',')[2];
+                        string valueR = param.value.Split(',')[0];
+                        string valueG = param.value.Split(',')[1];
+                        string valueB = param.value.Split(',')[2];
 
-                            finalString += dataR + "=" + valueR + "\r\n";
-                            finalString += dataG + "=" + valueG + "\r\n";
-                            finalString += dataB + "=" + valueB + "\r\n";
-                        }
-                        else
-                        {
-                            finalString += param.dataName + "=" + param.value + "\r\n";
-                        }
-
-                        pref.Write("Params", finalString.ToHexString(), post.key);
+                        finalString += dataR + "=" + valueR + "\r\n";
+                        finalString += dataG + "=" + valueG + "\r\n";
+                        finalString += dataB + "=" + valueB + "\r\n";
                     }
-                }
+                    else
+                    {
+                        finalString += param.dataName + "=" + param.value + "\r\n";
+                    }
+
+                    preset.Write("Params", finalString.ToHexString(), post.key);
+                }                
             }
 
             // Comment
-
-            pref.Write("Comment", comment.Replace("\r\n", "~^#"), "PRESET COMMENTS");
+            preset.Write("Comment", comment.Replace("\r\n", "~^#"), "PRESET COMMENTS");
         }
 
         public void LoadSettings(string filepath)
@@ -328,8 +369,8 @@ namespace OpenShade.Classes
                     switch (parts[0])
                     {
                         case "Preset":
-                            mainWindowHandle.presetPath = parts[1].Trim();
-                            mainWindowHandle.presetName = Path.GetFileNameWithoutExtension(parts[1].Trim());
+                            mainWindowHandle.activePresetPath = parts[1].Trim();
+                            mainWindowHandle.loadedPresetPath = mainWindowHandle.activePresetPath;
                             break;
 
                         case "Theme":
@@ -374,9 +415,9 @@ namespace OpenShade.Classes
         {
             List<string> lines = new List<string>();
 
-            if (mainWindowHandle.presetPath != null)
+            if (mainWindowHandle.activePresetPath != null)
             {
-                lines.Add("Preset, " + mainWindowHandle.presetPath);
+                lines.Add("Preset, " + mainWindowHandle.activePresetPath);
                 lines.Add("Theme, " + ((App)Application.Current).CurrentTheme.ToString());
                 lines.Add("Backup_Directory, " + mainWindowHandle.backupDirectory);
                 lines.Add("Main_Width, " + mainWindowHandle.Width.ToString());

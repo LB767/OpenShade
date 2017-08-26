@@ -7,7 +7,8 @@ namespace OpenShade.Classes
 {
     class IniFile
     {
-        string Path;
+        public string filepath;
+        public string filename { get { return Path.GetFileNameWithoutExtension(filepath); } }
         string EXE = Assembly.GetExecutingAssembly().GetName().Name;
 
         [DllImport("kernel32", CharSet = CharSet.Unicode)]
@@ -18,19 +19,19 @@ namespace OpenShade.Classes
 
         public IniFile(string IniPath = null)
         {
-            Path = new FileInfo(IniPath ?? EXE + ".ini").FullName.ToString();
+            filepath = new FileInfo(IniPath ?? EXE + ".ini").FullName.ToString();
         }
 
         public string Read(string Key, string Section = null)
         {
             var RetVal = new StringBuilder(10000);
-            GetPrivateProfileString(Section ?? EXE, Key, "", RetVal, 10000, Path);
+            GetPrivateProfileString(Section ?? EXE, Key, "", RetVal, 10000, filepath);
             return RetVal.ToString();
         }
 
         public void Write(string Key, string Value, string Section = null)
         {
-            WritePrivateProfileString(Section ?? EXE, Key, Value, Path);
+            WritePrivateProfileString(Section ?? EXE, Key, Value, filepath);
         }
 
         public void DeleteKey(string Key, string Section = null)
