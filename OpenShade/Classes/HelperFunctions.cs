@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Windows;
@@ -188,39 +189,43 @@ namespace OpenShade.Classes
 
 
 
-        public static string GetDictHashCode(Type type, dynamic effectList) // TODO: Another dynamic, get rid of it at some point
+        public static string GetDictHashCode<T>(List<T> effectList)
         {
             string hash = "";
-
-            if (type == typeof(Tweak) || type == typeof(PostProcess))
+           
+            foreach (var entry in effectList)
             {
-                foreach (var effect in effectList)
-                {
-                    hash += effect.name;
-                    hash += effect.isEnabled.ToString();
+                BaseTweak effect = entry as BaseTweak;
+                hash += effect.name;
+                hash += effect.isEnabled.ToString();
                    
-                    foreach (var param in effect.parameters)
-                    {
-                        hash += param.name;
-                        hash += param.value;
-                    }                    
-                }
-            }
-            else if (type == typeof(CustomTweak))
-            {
-                foreach (var effect in effectList)
+                foreach (var param in effect.parameters)
                 {
-                    hash += effect.name;
-                    hash += effect.shaderFile;
-                    hash += effect.index.ToString();
-                    hash += effect.oldCode;
-                    hash += effect.newCode;
-                    hash += effect.isEnabled.ToString();
-                }                
-            }          
+                    hash += param.name;
+                    hash += param.value;
+                }                    
+            }                      
                         
             return hash;
-        }        
+        }
+
+        public static string GetDictHashCode(ObservableCollection<CustomTweak> effectList)
+        {
+            string hash = "";
+                        
+            foreach (var entry in effectList)
+            {
+                CustomTweak effect = entry as CustomTweak;
+                hash += effect.name;
+                hash += effect.shaderFile;
+                hash += effect.index.ToString();
+                hash += effect.oldCode;
+                hash += effect.newCode;
+                hash += effect.isEnabled.ToString();
+            }
+           
+            return hash;
+        }
     }
 
 }

@@ -90,9 +90,9 @@ namespace OpenShade
 
             fileData = new FileIO(this);
 
-            tweaksHash = HelperFunctions.GetDictHashCode(typeof(Tweak), tweaks);
-            customTweaksHash = HelperFunctions.GetDictHashCode(typeof(CustomTweak), customTweaks);
-            postProcessesHash = HelperFunctions.GetDictHashCode(typeof(PostProcess), postProcesses);
+            tweaksHash = HelperFunctions.GetDictHashCode(tweaks);
+            customTweaksHash = HelperFunctions.GetDictHashCode(customTweaks);
+            postProcessesHash = HelperFunctions.GetDictHashCode(postProcesses);
             commentHash = comment;
 
 
@@ -210,9 +210,9 @@ namespace OpenShade
 
         private void Window_Closed(object sender, EventArgs e) // important to use Closed() and not Closing() because this has to happen after any LostFocus() event to have all up-to-date parameters
         {
-            if (HelperFunctions.GetDictHashCode(typeof(Tweak), tweaks) != tweaksHash ||
-                HelperFunctions.GetDictHashCode(typeof(CustomTweak), customTweaks) != customTweaksHash || 
-                HelperFunctions.GetDictHashCode(typeof(PostProcess), postProcesses) != postProcessesHash || 
+            if (HelperFunctions.GetDictHashCode(tweaks) != tweaksHash ||
+                HelperFunctions.GetDictHashCode(customTweaks) != customTweaksHash || 
+                HelperFunctions.GetDictHashCode(postProcesses) != postProcessesHash || 
                 comment != commentHash)
             {
                 MessageBoxResult result = MessageBox.Show("Some changes for the preset [" + loadedPreset.filename + "] were not saved.\r\nWould you like to save them now?", "Save", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
@@ -514,8 +514,7 @@ namespace OpenShade
 
                         if (param.hasChanged)
                         {
-                            TextBox changeTxtbox = new TextBox();
-                            changeTxtbox.Text = param.oldValue;
+                            TextBox changeTxtbox = new TextBox();                           
                             changeTxtbox.IsReadOnly = true;
                             changeTxtbox.Background = Brushes.Transparent;
                             changeTxtbox.Foreground = Brushes.Orange;
@@ -523,6 +522,14 @@ namespace OpenShade
                             changeTxtbox.Width = 170;
                             changeTxtbox.Height = 30;
                             changeTxtbox.Margin = new Thickness(10, 0, 10, 0);
+                            
+                            if (param.control == UIType.Checkbox)
+                            {
+                                changeTxtbox.Text = (param.oldValue == "1") ? "Enabled" : "Disabled";
+                            }
+                            else {
+                                changeTxtbox.Text = param.oldValue;
+                            }
 
                             rowStack.Children.Add(changeTxtbox);
                         }                        
@@ -806,6 +813,8 @@ namespace OpenShade
             if (result.HasValue && result.Value)
             {
                 // Load preset
+                string backupPresetPath = loadedPresetPath; // used as backup in case the following load fails
+
                 try
                 {
                     loadedPresetPath = dlg.FileName;
@@ -816,8 +825,13 @@ namespace OpenShade
                 }
                 catch (Exception ex)
                 {
-                    // TODO: What do we do? Do we reset as if it wasn't loaded or put the app in "error state"?
                     Log(ErrorType.Error, "Failed to load preset file [" + loadedPresetPath + "]. " + ex.Message);
+
+                    // Revert to previous preset
+                    loadedPresetPath = backupPresetPath;
+                    loadedPreset = new IniFile(backupPresetPath);
+                    LoadedPreset_Label.Content = loadedPreset.filename;
+                    LoadPreset(loadedPreset, true);                    
                 }    
             }
         }
@@ -829,9 +843,9 @@ namespace OpenShade
             fileData.LoadPostProcesses(postProcesses, preset, monitorChanges);
             PresetComments_TextBox.Text = fileData.LoadComments(preset);
 
-            tweaksHash = HelperFunctions.GetDictHashCode(typeof(Tweak), tweaks);
-            customTweaksHash = HelperFunctions.GetDictHashCode(typeof(CustomTweak), customTweaks);
-            postProcessesHash = HelperFunctions.GetDictHashCode(typeof(PostProcess), postProcesses);
+            tweaksHash = HelperFunctions.GetDictHashCode(tweaks);
+            customTweaksHash = HelperFunctions.GetDictHashCode(customTweaks);
+            postProcessesHash = HelperFunctions.GetDictHashCode(postProcesses);
             commentHash = comment;
 
             Tweak_List.Items.Refresh();
@@ -846,9 +860,9 @@ namespace OpenShade
                 comment = PresetComments_TextBox.Text;
                 fileData.SavePreset(tweaks, customTweaks, postProcesses, comment, loadedPreset);
 
-                tweaksHash = HelperFunctions.GetDictHashCode(typeof(Tweak), tweaks);
-                customTweaksHash = HelperFunctions.GetDictHashCode(typeof(CustomTweak), customTweaks);
-                postProcessesHash = HelperFunctions.GetDictHashCode(typeof(PostProcess), postProcesses);
+                tweaksHash = HelperFunctions.GetDictHashCode(tweaks);
+                customTweaksHash = HelperFunctions.GetDictHashCode(customTweaks);
+                postProcessesHash = HelperFunctions.GetDictHashCode(postProcesses);
                 commentHash = comment;
 
                 Log(ErrorType.None, "Preset [" + loadedPreset.filename + "] saved in " + loadedPreset.filepath);
@@ -877,9 +891,9 @@ namespace OpenShade
                     comment = PresetComments_TextBox.Text;
                     fileData.SavePreset(tweaks, customTweaks, postProcesses, comment, newPreset);
 
-                    tweaksHash = HelperFunctions.GetDictHashCode(typeof(Tweak), tweaks);
-                    customTweaksHash = HelperFunctions.GetDictHashCode(typeof(CustomTweak), customTweaks);
-                    postProcessesHash = HelperFunctions.GetDictHashCode(typeof(PostProcess), postProcesses);
+                    tweaksHash = HelperFunctions.GetDictHashCode(tweaks);
+                    customTweaksHash = HelperFunctions.GetDictHashCode(customTweaks);
+                    postProcessesHash = HelperFunctions.GetDictHashCode(postProcesses);
                     commentHash = comment;
 
                     loadedPresetPath = newPresetPath;

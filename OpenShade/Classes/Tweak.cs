@@ -149,7 +149,7 @@ namespace OpenShade.Classes
         }       
         private bool _hasChanged;
         public bool hasChanged        {
-            get { return (parameters.Exists(p => p.hasChanged == true) || stateChanged); }
+            get { return parameters.Exists(p => p.hasChanged == true); }
             set {
                 _hasChanged = value;
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("hasChanged"));
