@@ -1877,10 +1877,19 @@ float3 blur_ori;
         {
             if (fileData.CopyShaderFiles(backupDirectory, shaderDirectory))
             {
+                activePresetPath = null;
+                activePreset = null;
+                ActivePreset_Label.Content = "";
+
                 Log(ErrorType.None, "Shader files restored");
+
                 if (fileData.ClearDirectory(cacheDirectory))
                 {
                     Log(ErrorType.None, "Shader cache cleared");
+                }
+                else
+                {
+                    Log(ErrorType.Error, "Could not clear shader cache.");
                 }
             }
         }
