@@ -148,7 +148,7 @@
               CornerRadius="2" 
               Background="{DynamicResource BorderColor1}"                                            
               BorderThickness="1"
-              BorderBrush="{DynamicResource BorderColor1}">
+              BorderBrush="{TemplateBinding BorderBrush}">
                                 <Viewbox Width="9" Height="9" >
                                     <Path                 
                 x:Name="CheckMark"

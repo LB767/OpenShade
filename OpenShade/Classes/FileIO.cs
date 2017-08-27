@@ -373,6 +373,8 @@ namespace OpenShade.Classes
                         case "Preset":
                             mainWindowHandle.activePresetPath = parts[1].Trim();
                             mainWindowHandle.loadedPresetPath = mainWindowHandle.activePresetPath;
+                            mainWindowHandle.LoadedPreset_Label.Content = Path.GetFileNameWithoutExtension(mainWindowHandle.loadedPresetPath); // TODO: Replace with proper binding
+                            mainWindowHandle.ActivePreset_Label.Content = Path.GetFileNameWithoutExtension(mainWindowHandle.activePresetPath);
                             break;
 
                         case "Theme":

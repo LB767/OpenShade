@@ -48,7 +48,7 @@ namespace OpenShade.Classes
         public decimal max;
         public List<string> range;
         public UIType control;
-        public bool hasChanged = false;
+        public bool hasChanged = false; // TODO: We might wanna get rid of this now?
         public string oldValue; // value used on a previous preset (if it exists)
 
         public Parameter() { }

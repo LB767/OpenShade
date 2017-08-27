@@ -8,7 +8,11 @@ namespace OpenShade.Classes
     class IniFile
     {
         public string filepath;
-        public string filename { get { return Path.GetFileNameWithoutExtension(filepath); } }
+        public string filename {
+            get {
+                return Path.GetFileNameWithoutExtension(filepath);
+            }            
+        }
         string EXE = Assembly.GetExecutingAssembly().GetName().Name;
 
         [DllImport("kernel32", CharSet = CharSet.Unicode)]

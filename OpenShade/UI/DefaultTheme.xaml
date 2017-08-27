@@ -114,5 +114,8 @@
     </Style>
 
 
+    <Style TargetType="TextBox">        
+        <Setter Property="VerticalContentAlignment" Value="Center"/>        
+    </Style>
 
 </ResourceDictionary>

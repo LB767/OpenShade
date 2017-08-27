@@ -32,9 +32,9 @@ namespace OpenShade
         string commentHash; // that's just the original comments
 
         /*
-         * If a list will contain the same items for their whole lifetime, but the individual objects within that list will change, 
+         * If a list contains the same items for their whole lifetime, but the individual objects within that list change, 
          * then it's enough for just the objects to raise change notifications (typically through INotifyPropertyChanged) and List<T> is sufficient. 
-         * But if the list will contain different objects from time to time, or if the order changes, then you should use ObservableCollection<T>.
+         * But if the list contains different objects from time to time, or if the order changes, then you should use ObservableCollection<T>.
          */
         List<Tweak> tweaks;
         ObservableCollection<CustomTweak> customTweaks;
@@ -148,6 +148,7 @@ namespace OpenShade
                     {
                         activePreset = new IniFile(activePresetPath);
                         loadedPreset = activePreset;
+                        LoadedPreset_Label.Content = loadedPreset.filename;
                         LoadPreset(activePreset, false);
                         Log(ErrorType.None, "Preset [" + activePreset.filename + "] loaded");
                     }
@@ -214,7 +215,7 @@ namespace OpenShade
                 HelperFunctions.GetDictHashCode(typeof(PostProcess), postProcesses) != postProcessesHash || 
                 comment != commentHash)
             {
-                MessageBoxResult result = MessageBox.Show("Some changes were not saved.\r\nWould you like to save them now?", "Save", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+                MessageBoxResult result = MessageBox.Show("Some changes for the preset [" + loadedPreset.filename + "] were not saved.\r\nWould you like to save them now?", "Save", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
                 if (result == MessageBoxResult.Yes)
                 {
                     SavePreset_Click(null, null);
@@ -350,8 +351,6 @@ namespace OpenShade
 
                 if (selectedEffect.parameters.Count > 0)
                 {
-                    //StackGrid.Rows = selectedEffect.parameters.Count;                    
-
                     Button resetButton = new Button();
                     resetButton.Content = "Reset default";
                     resetButton.ToolTip = "Reset parameters to their default value";
@@ -362,7 +361,6 @@ namespace OpenShade
                     resetButton.Margin = new Thickness(0, 0, 0, 10);
                     resetButton.Click += new RoutedEventHandler(ResetParameters_Click);
 
-                    //Grid.SetColumn(resetButton, 1); // Why is this a thing????
                     clearStack.Children.Add(resetButton);
 
                     Button clearButton = new Button();
@@ -452,13 +450,12 @@ namespace OpenShade
                             spinner.Decimals = 10;
                             spinner.MinValue = param.min;
                             spinner.MaxValue = param.max;
-                            spinner.Step = 0.1m;
-                            // spinner.Background = param.hasChanged ? Brushes.Green : (Brush)FindResource("BackgroundColor1"); TODO: Find something decent to do
+                            spinner.Step = 0.1m;                           
                             spinner.LostFocus += new RoutedEventHandler(ParameterSpinner_LostFocus);
 
                             var item = new MenuItem();
                             item.Header = "Make Custom";
-                            item.Foreground = (Brush)FindResource("TextColor");
+                            item.SetResourceReference(Control.ForegroundProperty, "TextColor");
                             item.Tag = spinner;
                             item.Click += ParameterSwitch_Click;
                             spinner.ContextMenu = new ContextMenu();
@@ -476,7 +473,7 @@ namespace OpenShade
 
                             item = new MenuItem();
                             item.Header = "Make Default";
-                            item.Foreground = (Brush)FindResource("TextColor");
+                            item.SetResourceReference(Control.ForegroundProperty, "TextColor");
                             item.Tag = txtbox;
                             item.Click += ParameterSwitch_Click;
                             txtbox.ContextMenu = new ContextMenu();
@@ -502,8 +499,9 @@ namespace OpenShade
                         {
                             var combo = new ComboBox();
                             combo.Uid = param.id;
+                            combo.Width = 170;
                             combo.Height = 25;
-                            combo.Foreground = (Brush)FindResource("TextColor");
+                            combo.SetResourceReference(Control.ForegroundProperty, "TextColor");
                             foreach (var item in param.range)
                             {
                                 combo.Items.Add(item);
@@ -527,9 +525,7 @@ namespace OpenShade
                             changeTxtbox.Margin = new Thickness(10, 0, 10, 0);
 
                             rowStack.Children.Add(changeTxtbox);
-                        }                     
-
-                        param.hasChanged = false;
+                        }                        
 
                         StackGrid.Children.Add(rowStack);
                     }
@@ -539,10 +535,7 @@ namespace OpenShade
                     Label label = new Label();
                     label.Content = "No additional parameters";
                     StackGrid.Children.Add(label);
-                }
-
-                selectedEffect.stateChanged = false; // NOTE: This has to be here at the end, because this can raise a property change even in the tweak class,
-                                                     //       after parameters have has their 'hasChanged' cleared to 'false'
+                }                
             }
         }
 
@@ -790,6 +783,7 @@ namespace OpenShade
 
             loadedPresetPath = currentDirectory + "\\custom_preset.ini";
             loadedPreset = new IniFile(loadedPresetPath);
+            LoadedPreset_Label.Content = loadedPreset.filename;
 
             Log(ErrorType.None, "New Preset [" + loadedPreset.filename + "] created");
         }
@@ -816,6 +810,7 @@ namespace OpenShade
                 {
                     loadedPresetPath = dlg.FileName;
                     loadedPreset = new IniFile(loadedPresetPath);
+                    LoadedPreset_Label.Content = loadedPreset.filename;
                     LoadPreset(loadedPreset, true);
                     Log(ErrorType.None, "Preset [" + loadedPreset.filename + "] loaded");
                 }
@@ -889,6 +884,7 @@ namespace OpenShade
 
                     loadedPresetPath = newPresetPath;
                     loadedPreset = newPreset;
+                    LoadedPreset_Label.Content = loadedPreset.filename;
                     Log(ErrorType.None, "Preset [" + loadedPreset.filename + "] saved in " + loadedPreset.filepath);
                 }
                 catch (Exception ex)
@@ -905,7 +901,11 @@ namespace OpenShade
             fileData.LoadShaderFiles(backupDirectory); // Always load the unmodified files;
 
             // NOTE: Not sure what is the best way to implement this... for now just handle each tweak on a case by case basis, which is a lot of code but fine for now
-            // NOTE: This code is getting more awful by the minute           
+            // NOTE: This code is getting more awful by the minute
+
+            int tweakCount = 0;
+            int customCount = 0;
+            int postCount = 0;
 
             foreach (var tweak in tweaks)
             {
@@ -1242,6 +1242,7 @@ namespace OpenShade
                     }
                     else
                     {
+                        tweakCount++;
                         Log(ErrorType.None, "Tweak [" + tweak.name + "] applied.");
                     }
                 }
@@ -1291,6 +1292,7 @@ namespace OpenShade
                     }
                     else
                     {
+                        customCount++;
                         Log(ErrorType.None, "Custom tweak [" + custom.name + "] applied.");
                     }
                 }
@@ -1795,6 +1797,7 @@ float3 blur_ori;
                     }
                     else
                     {
+                        postCount++;
                         Log(ErrorType.None, "Post process [" + post.name + "] applied.");
                     }
                 }
@@ -1816,6 +1819,15 @@ float3 blur_ori;
                 return;
             }
 
+            activePresetPath = loadedPresetPath;
+            activePreset = loadedPreset;
+            ActivePreset_Label.Content = activePreset.filename;
+
+            Log(ErrorType.None, "Preset [" + activePreset.filename + "] applied. " 
+                + tweakCount + "/" + tweaks.Count(p => p.isEnabled == true) + " tweaks applied. " 
+                + customCount + "/" + customTweaks.Count(p => p.isEnabled == true) + " custom tweaks applied. " 
+                + postCount + "/" + postProcesses.Count(p => p.isEnabled == true) + " post-processes applied.");
+
             try
             {
                 fileData.ClearDirectory(cacheDirectory);
@@ -1823,13 +1835,11 @@ float3 blur_ori;
             }
             catch
             {
-                Log(ErrorType.Error, "Could not clear shader cache.");
-                return;
+                Log(ErrorType.Error, "Could not clear shader cache.");                
             }
 
-            activePresetPath = loadedPresetPath;
-            activePreset = loadedPreset;
-            Log(ErrorType.None, "Preset [" + activePreset.filename + "] applied");
+            ResetChanges(tweaks);
+            ResetChanges(postProcesses);
         }
 
         private void ResetShaderFiles(object sender, RoutedEventArgs e)
@@ -1875,6 +1885,18 @@ float3 blur_ori;
             }
         }
 
+
+        private void ResetChanges<T>(List<T> effectsList) {
+            foreach (T entry in effectsList)
+            {
+                BaseTweak effect = entry as BaseTweak;
+                foreach (var param in effect.parameters) {
+                    param.hasChanged = false;
+                }
+                effect.stateChanged = false; // NOTE: This has to be here at the end, because this can raise a property change even in the tweak class,
+                                             //       after parameters have has their 'hasChanged' cleared to 'false'
+            }           
+        }
 
         public void ChangeMenuBarState(bool enable)
         {
