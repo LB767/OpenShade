@@ -83,6 +83,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Classes\DynamicStyle.cs" />
     <Compile Include="Controls\NumericSpinner.xaml.cs">
       <DependentUpon>NumericSpinner.xaml</DependentUpon>
     </Compile>

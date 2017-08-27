@@ -7,7 +7,6 @@ using System.Windows.Media;
 
 namespace OpenShade.Classes
 
-// TODO: Make better .Replace() functions
 {
     public static class HelperFunctions
     {

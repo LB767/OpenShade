@@ -130,7 +130,7 @@ namespace OpenShade.Classes
                                 
                 foreach (var param in tweak.parameters)
                 {
-                    string oldValue = param.value;
+                    param.oldValue = param.value;
 
                     if (param.control == UIType.RGB)
                     {
@@ -154,11 +154,12 @@ namespace OpenShade.Classes
                         param.value = pref.Read(param.dataName, tweak.key);
                     }
 
-                    if (param.value != oldValue && monitorChanges) // TODO: In some cases this evaluates to false because of stuff like "1.0" != "1.00" ... not sure what's the best thing to do
+                    if (param.value != param.oldValue && monitorChanges) // TODO: In some cases this evaluates to false because of stuff like "1.0" != "1.00" ... not sure what's the best thing to do
                     { 
                         param.hasChanged = true;
                     }
                     else {
+                        param.oldValue = param.value;
                         param.hasChanged = false;
                     }
                 }                
@@ -220,7 +221,7 @@ namespace OpenShade.Classes
 
                 foreach (var param in post.parameters)
                 {
-                    string oldValue = param.value;
+                    param.oldValue = param.value;
 
                     if (param.control == UIType.RGB)
                     {
@@ -245,11 +246,12 @@ namespace OpenShade.Classes
                         param.value = identifiedLine.Split('=')[1];
                     }
 
-                    if (param.value != oldValue && monitorChanges)
+                    if (param.value != param.oldValue && monitorChanges)
                     {
                         param.hasChanged = true;
                     }
                     else {
+                        param.oldValue = param.value; // put the current value as old value, for instance when we load the first preset
                         param.hasChanged = false;
                     }
                 }                

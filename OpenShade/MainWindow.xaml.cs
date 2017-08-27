@@ -53,8 +53,6 @@ namespace OpenShade
         IniFile activePreset;
         public string loadedPresetPath;
         IniFile loadedPreset;
-        //public string presetPath;
-        //public string presetName;
 
         // TODO: put this in a struct somewhere
         public static string cloudText, generalText, terrainText, funclibText, terrainFXHText, shadowText, HDRText;
@@ -338,7 +336,7 @@ namespace OpenShade
         #endregion
 
         #region ParametersUpdates
-        private void List_SelectionChanged(Type type, ListView itemListview, UniformGrid StackGrid, StackPanel clearStack, Label titleBlock, TextBlock descriptionBlock)
+        private void List_SelectionChanged(Type type, ListView itemListview, StackPanel StackGrid, StackPanel clearStack, Label titleBlock, TextBlock descriptionBlock)
         {
             if (itemListview.SelectedItem != null)
             {
@@ -352,30 +350,45 @@ namespace OpenShade
 
                 if (selectedEffect.parameters.Count > 0)
                 {
-                    StackGrid.Rows = selectedEffect.parameters.Count;
+                    //StackGrid.Rows = selectedEffect.parameters.Count;                    
 
                     Button resetButton = new Button();
-                    resetButton.Content = "Reset";
+                    resetButton.Content = "Reset default";
                     resetButton.ToolTip = "Reset parameters to their default value";
-                    resetButton.Width = 50;
+                    resetButton.Width = 100;
                     resetButton.Height = 25;
                     resetButton.VerticalAlignment = VerticalAlignment.Top;
                     resetButton.HorizontalAlignment = HorizontalAlignment.Right;
+                    resetButton.Margin = new Thickness(0, 0, 0, 10);
                     resetButton.Click += new RoutedEventHandler(ResetParameters_Click);
 
-                    Grid.SetColumn(resetButton, 1);
+                    //Grid.SetColumn(resetButton, 1); // Why is this a thing????
                     clearStack.Children.Add(resetButton);
 
+                    Button clearButton = new Button();
+                    clearButton.Content = "Reset preset";
+                    clearButton.ToolTip = "Reset parameters to their value in the active preset";
+                    clearButton.Width = 100;
+                    clearButton.Height = 25;
+                    clearButton.VerticalAlignment = VerticalAlignment.Top;
+                    clearButton.HorizontalAlignment = HorizontalAlignment.Right;
+                    clearButton.Click += new RoutedEventHandler(ResetParametersPreset_Click);
+
+                    clearStack.Children.Add(clearButton);
+
                     foreach (Parameter param in selectedEffect.parameters)
-                    {                       
+                    {
+                        StackPanel rowStack = new StackPanel();
+                        rowStack.Orientation = Orientation.Horizontal;
+
                         TextBlock txtBlock = new TextBlock();
                         txtBlock.Text = param.name;
                         txtBlock.TextWrapping = TextWrapping.Wrap;
                         txtBlock.Width = 170;
                         txtBlock.Height = 30;
-                        txtBlock.Margin = new Thickness(0, 0, 10, 0);
+                        txtBlock.Margin = new Thickness(0, 0, 10, 0);                        
 
-                        StackGrid.Children.Add(txtBlock);
+                        rowStack.Children.Add(txtBlock);
 
                         if (param.control == UIType.Checkbox)
                         {
@@ -384,7 +397,7 @@ namespace OpenShade
                             checkbox.Uid = param.id;
                             checkbox.VerticalAlignment = VerticalAlignment.Center;
                             checkbox.Click += new RoutedEventHandler(Checkbox_Click);
-                            StackGrid.Children.Add(checkbox);
+                            rowStack.Children.Add(checkbox);
                         }
                         else if (param.control == UIType.RGB)
                         {
@@ -427,13 +440,14 @@ namespace OpenShade
 
                             group.Content = container;
 
-                            StackGrid.Children.Add(group);
+                            rowStack.Children.Add(group);
                         }
 
                         else if (param.control == UIType.Text)
                         {
                             var spinner = new NumericSpinner();
                             spinner.Uid = param.id;
+                            spinner.Width = 170;
                             spinner.Height = 25;
                             spinner.Decimals = 10;
                             spinner.MinValue = param.min;
@@ -453,6 +467,7 @@ namespace OpenShade
 
                             var txtbox = new TextBox();
                             txtbox.Uid = param.id;
+                            txtbox.Width = 170;
                             txtbox.Height = 50;
                             txtbox.VerticalContentAlignment = VerticalAlignment.Top;
                             //spinner.TextWrapping = TextWrapping.Wrap;
@@ -479,8 +494,8 @@ namespace OpenShade
                                 spinner.Visibility = Visibility.Collapsed;
                             }
 
-                            StackGrid.Children.Add(spinner);
-                            StackGrid.Children.Add(txtbox);
+                            rowStack.Children.Add(spinner);
+                            rowStack.Children.Add(txtbox);
                         }
 
                         else if (param.control == UIType.Combobox)
@@ -496,10 +511,27 @@ namespace OpenShade
                             combo.SelectedIndex = int.Parse(param.value);
                             combo.SelectionChanged += new SelectionChangedEventHandler(Combobox_SelectionChanged);
 
-                            StackGrid.Children.Add(combo);
+                            rowStack.Children.Add(combo);
                         }
 
+                        if (param.hasChanged)
+                        {
+                            TextBox changeTxtbox = new TextBox();
+                            changeTxtbox.Text = param.oldValue;
+                            changeTxtbox.IsReadOnly = true;
+                            changeTxtbox.Background = Brushes.Transparent;
+                            changeTxtbox.Foreground = Brushes.Orange;
+                            changeTxtbox.BorderThickness = new Thickness(0);
+                            changeTxtbox.Width = 170;
+                            changeTxtbox.Height = 30;
+                            changeTxtbox.Margin = new Thickness(10, 0, 10, 0);
+
+                            rowStack.Children.Add(changeTxtbox);
+                        }                     
+
                         param.hasChanged = false;
+
+                        StackGrid.Children.Add(rowStack);
                     }
                 }
                 else
@@ -520,16 +552,8 @@ namespace OpenShade
             TabItem currentTab = HelperFunctions.FindAncestorOrSelf<TabItem>(checkbox);
             Parameter param = null;
 
-            switch (currentTab.Header.ToString())
-            {
-                case "Tweaks":
-                    param = ((Tweak)(Tweak_List.SelectedItem)).parameters.First(p => p.id == checkbox.Uid);
-                    break;
-
-                case "Post Process":
-                    param = ((PostProcess)(PostProcess_List.SelectedItem)).parameters.First(p => p.id == checkbox.Uid);
-                    break;
-            }
+            if (currentTab.Name == "Tweak_Tab") { param = ((Tweak)Tweak_List.SelectedItem).parameters.First(p => p.id == checkbox.Uid); }
+            if (currentTab.Name == "Post_Tab") { param = ((PostProcess)PostProcess_List.SelectedItem).parameters.First(p => p.id == checkbox.Uid); }         
 
             if (checkbox.IsChecked == true)
             {
@@ -547,22 +571,11 @@ namespace OpenShade
             TabItem currentTab = HelperFunctions.FindAncestorOrSelf<TabItem>(txtBox);            
             Parameter param = null;
 
-            switch (currentTab.Header.ToString())
-            {
-                case "Tweaks":
-                    param = ((Tweak)Tweak_List.SelectedItem).parameters.First(p => p.id == txtBox.Uid);                    
-                    break;
+            if (currentTab.Name == "Tweak_Tab") { param = ((Tweak)Tweak_List.SelectedItem).parameters.First(p => p.id == txtBox.Uid); }
+            if (currentTab.Name == "Post_Tab") { param = ((PostProcess)PostProcess_List.SelectedItem).parameters.First(p => p.id == txtBox.Uid); }
+            if (currentTab.Name == "Custom_Tab") { ((CustomTweak)CustomTweak_List.SelectedItem).name = txtBox.Text; } // NOTE: Maybe unify this to behave like tweaks and post-processes
 
-                case "Post Process":
-                    param = ((PostProcess)PostProcess_List.SelectedItem).parameters.First(p => p.id == txtBox.Uid);                   
-                    break;
-
-                case "Custom": // NOTE: Maybe unify this to behave like tweaks and post-processes                    
-                    ((CustomTweak)CustomTweak_List.SelectedItem).name = txtBox.Text;                    
-                    break;
-            }
-
-            if (currentTab.Header.ToString() != "Custom") { param.value = txtBox.Text; }
+            if (currentTab.Name != "Custom_Tab") { param.value = txtBox.Text; }
         }
 
         private void ParameterSpinner_LostFocus(object sender, EventArgs e)
@@ -571,18 +584,10 @@ namespace OpenShade
             TabItem currentTab = HelperFunctions.FindAncestorOrSelf<TabItem>(spinner);
             Parameter param = null;
 
-            switch (currentTab.Header.ToString())
-            {
-                case "Tweaks":
-                    param = ((Tweak)Tweak_List.SelectedItem).parameters.First(p => p.id == spinner.Uid);                    
-                    break;
+            if (currentTab.Name == "Tweak_Tab") { param = ((Tweak)Tweak_List.SelectedItem).parameters.First(p => p.id == spinner.Uid); }
+            if (currentTab.Name == "Post_Tab") { param = ((PostProcess)PostProcess_List.SelectedItem).parameters.First(p => p.id == spinner.Uid); }            
 
-                case "Post Process":
-                    param = ((PostProcess)PostProcess_List.SelectedItem).parameters.First(p => p.id == spinner.Uid);                    
-                    break;
-            }
-
-            if (currentTab.Header.ToString() != "Custom") { param.value = spinner.Value.ToString(); }
+            if (currentTab.Name != "Custom_Tab") { param.value = spinner.Value.ToString(); }
         }
 
         private void ParameterSwitch_Click(object sender, EventArgs e)
@@ -590,18 +595,10 @@ namespace OpenShade
             MenuItem item = (MenuItem)sender;
 
             TabItem currentTab = HelperFunctions.FindAncestorOrSelf<TabItem>((DependencyObject)item.Tag);
-            UniformGrid currentStack = null;
+            StackPanel currentStack = null;
 
-            switch (currentTab.Header.ToString())
-            {
-                case "Tweaks":
-                    currentStack = TweakStack;
-                    break;
-
-                case "Post Process":
-                    currentStack = PostProcessStack;
-                    break;
-            }
+            if (currentTab.Name == "Tweak_Tab") { currentStack = TweakStack; }
+            if (currentTab.Name == "Post_Tab") { currentStack = PostProcessStack; }            
 
             if (item.Tag.GetType() == typeof(NumericSpinner))
             {
@@ -632,17 +629,9 @@ namespace OpenShade
             TabItem currentTab = HelperFunctions.FindAncestorOrSelf<TabItem>(spinner);
             Parameter param = null;
 
-            switch (currentTab.Header.ToString())
-            {
-                case "Tweaks":
-                    param = ((Tweak)(Tweak_List.SelectedItem)).parameters.First(p => p.id == uid);
-                    break;
-
-                case "Post Process":
-                    param = ((PostProcess)(PostProcess_List.SelectedItem)).parameters.First(p => p.id == uid);
-                    break;
-            }
-
+            if (currentTab.Name == "Tweak_Tab") { param = ((Tweak)Tweak_List.SelectedItem).parameters.First(p => p.id == uid); }
+            if (currentTab.Name == "Post_Tab") { param = ((PostProcess)PostProcess_List.SelectedItem).parameters.First(p => p.id == uid); }
+            
             string oldR = param.value.Split(',')[0];
             string oldG = param.value.Split(',')[1];
             string oldB = param.value.Split(',')[2];
@@ -667,22 +656,11 @@ namespace OpenShade
             TabItem currentTab = HelperFunctions.FindAncestorOrSelf<TabItem>(combo);
             Parameter param = null;
 
-            switch (currentTab.Header.ToString())
-            {
-                case "Tweaks":
-                    param = ((Tweak)Tweak_List.SelectedItem).parameters.First(p => p.id == combo.Uid);
-                    break;
+            if (currentTab.Name == "Tweak_Tab") { param = ((Tweak)Tweak_List.SelectedItem).parameters.First(p => p.id == combo.Uid); }
+            if (currentTab.Name == "Post_Tab") { param = ((PostProcess)PostProcess_List.SelectedItem).parameters.First(p => p.id == combo.Uid); }
+            if (currentTab.Name == "Custom_Tab") { ((CustomTweak)CustomTweak_List.SelectedItem).name = combo.Text; }
 
-                case "Post Process":
-                    param = ((PostProcess)PostProcess_List.SelectedItem).parameters.First(p => p.id == combo.Uid);
-                    break;
-
-                case "Custom": // NOTE: Maybe unify this to behave like tweaks and post-processes                    
-                    ((CustomTweak)CustomTweak_List.SelectedItem).name = combo.Text;
-                    break;
-            }
-
-            if (currentTab.Header.ToString() != "Custom") { param.value = combo.SelectedIndex.ToString(); }
+            if (currentTab.Name != "Custom_Tab") { param.value = combo.SelectedIndex.ToString(); }
         }
 
         private void RichTextBox_LostFocus(object sender, EventArgs e)
@@ -706,26 +684,41 @@ namespace OpenShade
             Button btn = (Button)sender;
             TabItem currentTab = HelperFunctions.FindAncestorOrSelf<TabItem>(btn);
 
-            switch (currentTab.Header.ToString())
-            {
-                case "Tweaks":
-                    Tweak selectedTweak = (Tweak)Tweak_List.SelectedItem;
-                    foreach (var param in selectedTweak.parameters)
-                    {
-                        param.value = param.defaultValue;
-                    }
-                    TweakList_SelectionChanged(null, null); // Trick... would not need this if we had standard bindings
-                    break;
+            ListView currentList = null;
 
-                case "Post Process":
-                    PostProcess selectedPost = (PostProcess)PostProcess_List.SelectedItem;
-                    foreach (var param in selectedPost.parameters)
-                    {
-                        param.value = param.defaultValue;
-                    }
-                    PostProcessList_SelectionChanged(null, null);
-                    break;
+            if (currentTab.Name == "Tweak_Tab") { currentList = Tweak_List; }
+            if (currentTab.Name == "Post_Tab") { currentList = PostProcess_List; }
+
+            BaseTweak selectedEffect = (BaseTweak)currentList.SelectedItem;
+
+            foreach (var param in selectedEffect.parameters)
+            {
+                param.value = param.defaultValue;
             }
+
+            if (currentTab.Name == "Tweak_Tab") { List_SelectionChanged(typeof(Tweak), Tweak_List, TweakStack, TweakClearStack, TweakTitleTextblock, TweakDescriptionTextblock); ; }
+            if (currentTab.Name == "Post_Tab") { List_SelectionChanged(typeof(PostProcess), PostProcess_List, PostProcessStack, PostClearStack, PostTitleTextblock, PostDescriptionTextblock); }
+        }
+
+        private void ResetParametersPreset_Click(object sender, EventArgs e)
+        {
+            Button btn = (Button)sender;
+            TabItem currentTab = HelperFunctions.FindAncestorOrSelf<TabItem>(btn);
+
+            ListView currentList = null;
+
+            if (currentTab.Name == "Tweak_Tab") { currentList = Tweak_List; }
+            if (currentTab.Name == "Post_Tab") { currentList = PostProcess_List; }            
+
+            BaseTweak selectedEffect = (BaseTweak)currentList.SelectedItem;
+
+            foreach (var param in selectedEffect.parameters)
+            {
+                param.value = param.oldValue;
+            }
+
+            if (currentTab.Name == "Tweak_Tab") { List_SelectionChanged(typeof(Tweak), Tweak_List, TweakStack, TweakClearStack, TweakTitleTextblock, TweakDescriptionTextblock); ; }
+            if (currentTab.Name == "Post_Tab") { List_SelectionChanged(typeof(PostProcess), PostProcess_List, PostProcessStack, PostClearStack, PostTitleTextblock, PostDescriptionTextblock); }            
         }
         #endregion
 
@@ -804,7 +797,7 @@ namespace OpenShade
         private void OpenPreset_Click(object sender, RoutedEventArgs e)
         {
             // Create OpenFileDialog 
-            Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog();
+            OpenFileDialog dlg = new OpenFileDialog();
 
             // Set filter for file extension and default file extension 
             dlg.DefaultExt = ".ini";

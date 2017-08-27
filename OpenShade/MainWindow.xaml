@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:OpenShade"
+        xmlns:ap="clr-namespace:OpenShade.Classes"
         mc:Ignorable="d"
         Title="Open Shade" WindowStartupLocation="CenterScreen" Width="1000" Height="800" Icon="Assets\icon.ico" Loaded="Window_Loaded" Closed="Window_Closed" Style="{DynamicResource WindowStyle}">
 
@@ -114,7 +115,7 @@
         </StackPanel>
 
         <TabControl Background="{DynamicResource WindowBackground}" Grid.Row="1" BorderThickness="0" x:Name="TabMain">
-            <TabItem Header="Tweaks">
+            <TabItem x:Name="Tweak_Tab" Header="Tweaks">
                 <Grid x:Name="Tweaks_Grid" Margin="3,3,3,3">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="300" MinWidth="100"/>
@@ -146,7 +147,17 @@
                     <ListView.ItemTemplate>
                         <DataTemplate>
                             <StackPanel Orientation="Horizontal">
-                                <CheckBox IsChecked="{Binding isEnabled}" Margin="0,0,5,0"/>
+                                    <CheckBox IsChecked="{Binding isEnabled}" Margin="0,0,5,0" ap:DynamicStyle.BaseStyle="{DynamicResource {x:Type CheckBox}}">
+                                        <ap:DynamicStyle.DerivedStyle>
+                                            <Style TargetType="CheckBox">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding stateChanged}" Value="True">
+                                                        <Setter Property="Foreground" Value="Green" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </ap:DynamicStyle.DerivedStyle>
+                                    </CheckBox>
                                     <Label Content="{Binding name}">
                                         <Label.Style>
                                             <Style TargetType="Label" BasedOn="{StaticResource {x:Type Label}}">
@@ -174,16 +185,16 @@
                     <Separator/>
                     <Grid Margin="10">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="450"/>
+                            <ColumnDefinition Width="500"/>
                             <ColumnDefinition Width="100*"/>
                             </Grid.ColumnDefinitions>
-                        <UniformGrid x:Name="TweakStack" Grid.Column="0" Columns="2"/>
+                        <StackPanel x:Name="TweakStack" Grid.Column="0"/>
                         <StackPanel x:Name="TweakClearStack" Grid.Column="1"/>
                         </Grid>
                 </StackPanel>
             </Grid>
         </TabItem>
-            <TabItem Header="Post Process">
+            <TabItem x:Name="Post_Tab" Header="Post Process">
                 <Grid x:Name="Post_Grid" Margin="3,3,3,3">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="300" MinWidth="100"/>
@@ -195,7 +206,17 @@
                         <ListView.ItemTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal">
-                                    <CheckBox IsChecked="{Binding isEnabled}" Margin="0,0,5,0"/>
+                                    <CheckBox IsChecked="{Binding isEnabled}" Margin="0,0,5,0" ap:DynamicStyle.BaseStyle="{DynamicResource {x:Type CheckBox}}">
+                                        <ap:DynamicStyle.DerivedStyle>
+                                            <Style TargetType="CheckBox">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding stateChanged}" Value="True">
+                                                        <Setter Property="Foreground" Value="Green" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </ap:DynamicStyle.DerivedStyle>
+                                    </CheckBox>
                                     <Label Content="{Binding name}">
                                         <Label.Style>
                                             <Style TargetType="Label" BasedOn="{StaticResource {x:Type Label}}">
@@ -234,17 +255,17 @@
                         <Separator/>
                         <Grid Margin="10">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="450"/>
+                                <ColumnDefinition Width="500"/>
                                 <ColumnDefinition Width="100*"/>
                             </Grid.ColumnDefinitions>
-                            <UniformGrid x:Name="PostProcessStack" Grid.Column="0" Columns="2"/>
+                            <StackPanel x:Name="PostProcessStack" Grid.Column="0"/>
                             <StackPanel x:Name="PostClearStack" Grid.Column="1"/>
                         </Grid>
                     </StackPanel>
                     
                 </Grid>
             </TabItem>
-            <TabItem Header="Custom">
+            <TabItem x:Name="Custom_Tab"  Header="Custom">
                 <Grid x:Name="Custom_Grid" Margin="3,3,3,3">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="300" MinWidth="100"/>

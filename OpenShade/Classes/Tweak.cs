@@ -49,6 +49,7 @@ namespace OpenShade.Classes
         public List<string> range;
         public UIType control;
         public bool hasChanged = false;
+        public string oldValue; // value used on a previous preset (if it exists)
 
         public Parameter() { }
 
@@ -134,14 +135,15 @@ namespace OpenShade.Classes
         public bool isEnabled { get; set; }
         public List<Parameter> parameters { get; set; }
 
-        // This following bit of code is absolutely awful, but Hey! that what MVVM people do!
+        // This following bit of code is absolutely awful, but Hey! that's what MVVM people do!
         private bool _stateChanged;
-        public bool stateChanged { // to know if the tweak was enabled/disabled -> Used below if the tweak doesn't have parameters, this is used to know changes
+        public bool stateChanged { // to know if the tweak was switched enabled/disabled
             get {
                 return _stateChanged;
             }
             set {
                 _stateChanged = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("stateChanged"));
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("hasChanged"));
             }
         }       
