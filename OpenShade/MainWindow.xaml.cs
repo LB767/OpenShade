@@ -140,29 +140,41 @@ namespace OpenShade
             }
 
             // Load preset
-            if (activePresetPath != null)
+            if (loadedPresetPath != null)
             {
-                if (File.Exists(activePresetPath))
+                if (File.Exists(loadedPresetPath))
                 {
                     try
                     {
-                        activePreset = new IniFile(activePresetPath);
-                        loadedPreset = activePreset;
+                        loadedPreset = new IniFile(loadedPresetPath);
                         LoadedPreset_Label.Content = loadedPreset.filename;
-                        LoadPreset(activePreset, false);
-                        Log(ErrorType.None, "Preset [" + activePreset.filename + "] loaded");
+                        LoadPreset(loadedPreset, false);
+                        Log(ErrorType.None, "Preset [" + loadedPreset.filename + "] loaded");
                     }
                     catch (Exception ex)
                     {
-                        Log(ErrorType.Error, "Failed to load preset file [" + activePresetPath + "]. " + ex.Message);
+                        Log(ErrorType.Error, "Failed to load preset file [" + loadedPresetPath + "]. " + ex.Message);
                     }
+                }
+                else
+                {
+                    Log(ErrorType.Error, "Active Preset file [" + loadedPresetPath + "] not found");
+                }
+            }
+
+            if (activePresetPath != null)
+            {
+                if (File.Exists(activePresetPath))
+                {                   
+                    activePreset = new IniFile(activePresetPath);
+                    ActivePreset_Label.Content = activePreset.filename;                    
                 }
                 else
                 {
                     Log(ErrorType.Error, "Active Preset file [" + activePresetPath + "] not found");
                 }
             }
-       
+
             // Load Theme
             Theme_ComboBox.ItemsSource = Enum.GetValues(typeof(Themes)).Cast<Themes>();
             Theme_ComboBox.SelectedItem = ((App)Application.Current).CurrentTheme;
@@ -229,7 +241,7 @@ namespace OpenShade
         #region MainTweaks
         private void TweakList_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            List_SelectionChanged(typeof(Tweak), Tweak_List, TweakStack, TweakClearStack, TweakTitleTextblock, TweakDescriptionTextblock);
+            List_SelectionChanged(Tweak_List, TweakStack, TweakClearStack, TweakTitleTextblock, TweakDescriptionTextblock);
         }
         #endregion
 
@@ -332,12 +344,12 @@ namespace OpenShade
         #region PostProcesses        
         private void PostProcessList_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            List_SelectionChanged(typeof(PostProcess), PostProcess_List, PostProcessStack, PostClearStack, PostTitleTextblock, PostDescriptionTextblock);
+            List_SelectionChanged(PostProcess_List, PostProcessStack, PostClearStack, PostTitleTextblock, PostDescriptionTextblock);
         }
         #endregion
 
         #region ParametersUpdates
-        private void List_SelectionChanged(Type type, ListView itemListview, StackPanel StackGrid, StackPanel clearStack, Label titleBlock, TextBlock descriptionBlock)
+        private void List_SelectionChanged(ListView itemListview, StackPanel StackGrid, StackPanel clearStack, Label titleBlock, TextBlock descriptionBlock)
         {
             if (itemListview.SelectedItem != null)
             {
@@ -696,8 +708,8 @@ namespace OpenShade
                 param.value = param.defaultValue;
             }
 
-            if (currentTab.Name == "Tweak_Tab") { List_SelectionChanged(typeof(Tweak), Tweak_List, TweakStack, TweakClearStack, TweakTitleTextblock, TweakDescriptionTextblock); ; }
-            if (currentTab.Name == "Post_Tab") { List_SelectionChanged(typeof(PostProcess), PostProcess_List, PostProcessStack, PostClearStack, PostTitleTextblock, PostDescriptionTextblock); }
+            if (currentTab.Name == "Tweak_Tab") { List_SelectionChanged(Tweak_List, TweakStack, TweakClearStack, TweakTitleTextblock, TweakDescriptionTextblock); }
+            if (currentTab.Name == "Post_Tab") { List_SelectionChanged(PostProcess_List, PostProcessStack, PostClearStack, PostTitleTextblock, PostDescriptionTextblock); }
         }
 
         private void ResetParametersPreset_Click(object sender, EventArgs e)
@@ -717,8 +729,8 @@ namespace OpenShade
                 param.value = param.oldValue;
             }
 
-            if (currentTab.Name == "Tweak_Tab") { List_SelectionChanged(typeof(Tweak), Tweak_List, TweakStack, TweakClearStack, TweakTitleTextblock, TweakDescriptionTextblock); ; }
-            if (currentTab.Name == "Post_Tab") { List_SelectionChanged(typeof(PostProcess), PostProcess_List, PostProcessStack, PostClearStack, PostTitleTextblock, PostDescriptionTextblock); }            
+            if (currentTab.Name == "Tweak_Tab") { List_SelectionChanged(Tweak_List, TweakStack, TweakClearStack, TweakTitleTextblock, TweakDescriptionTextblock); }
+            if (currentTab.Name == "Post_Tab") { List_SelectionChanged(PostProcess_List, PostProcessStack, PostClearStack, PostTitleTextblock, PostDescriptionTextblock); }            
         }
         #endregion
 
@@ -789,6 +801,11 @@ namespace OpenShade
             CustomTweak_List.Items.Refresh();
 
             loadedPresetPath = currentDirectory + "\\custom_preset.ini";
+            int i = 2;
+            while (File.Exists(loadedPresetPath)) {
+                loadedPresetPath = currentDirectory + "\\custom_preset_" + i.ToString() + ".ini";
+            }
+
             loadedPreset = new IniFile(loadedPresetPath);
             LoadedPreset_Label.Content = loadedPreset.filename;
 
@@ -1852,8 +1869,8 @@ float3 blur_ori;
                 Log(ErrorType.Error, "Could not clear shader cache.");                
             }
 
-            ResetChanges(tweaks);
-            ResetChanges(postProcesses);
+            ClearChangesInfo(tweaks);
+            ClearChangesInfo(postProcesses);
         }
 
         private void ResetShaderFiles(object sender, RoutedEventArgs e)
@@ -1865,25 +1882,6 @@ float3 blur_ori;
                 {
                     Log(ErrorType.None, "Shader cache cleared");
                 }
-            }
-        }
-
-        private void ResetSettings_Click(object sender, RoutedEventArgs e)
-        {
-            foreach (var tweak in tweaks)
-            {                
-                foreach (var param in tweak.parameters)
-                {
-                    param.value = param.defaultValue;
-                }                
-            }
-
-            foreach (var post in postProcesses)
-            {               
-                foreach (var param in post.parameters)
-                {
-                    param.value = param.defaultValue;
-                }                
             }
         }
 
@@ -1900,7 +1898,53 @@ float3 blur_ori;
         }
 
 
-        private void ResetChanges<T>(List<T> effectsList) {
+        private void ResetToPreset(object sender, RoutedEventArgs e)
+        {
+            loadedPresetPath = activePresetPath;
+            loadedPreset = activePreset;
+            LoadedPreset_Label.Content = loadedPreset.filename;
+            LoadPreset(activePreset, false);
+
+            List_SelectionChanged(Tweak_List, TweakStack, TweakClearStack, TweakTitleTextblock, TweakDescriptionTextblock);
+            List_SelectionChanged(PostProcess_List, PostProcessStack, PostClearStack, PostTitleTextblock, PostDescriptionTextblock);
+
+            Log(ErrorType.None, "Active preset parameters restored.");
+        }
+
+        private void ResetToDefaults(object sender, RoutedEventArgs e)
+        {
+            foreach (var tweak in tweaks)
+            {                
+                foreach (var param in tweak.parameters)
+                {
+                    param.value = param.defaultValue;
+                }
+                tweak.isEnabled = false;
+            }
+
+            foreach (var post in postProcesses)
+            {               
+                foreach (var param in post.parameters)
+                {
+                    param.value = param.defaultValue;
+                }
+                post.isEnabled = false;
+            }
+
+            customTweaks.Clear();
+
+            List_SelectionChanged(Tweak_List, TweakStack, TweakClearStack, TweakTitleTextblock, TweakDescriptionTextblock);
+            List_SelectionChanged(PostProcess_List, PostProcessStack, PostClearStack, PostTitleTextblock, PostDescriptionTextblock);
+
+            Tweak_List.Items.Refresh();
+            PostProcess_List.Items.Refresh();
+            CustomTweak_List.Items.Refresh();
+
+            Log(ErrorType.None, "Parameters reset to default");
+        }
+
+
+        private void ClearChangesInfo<T>(List<T> effectsList) {
             foreach (T entry in effectsList)
             {
                 BaseTweak effect = entry as BaseTweak;

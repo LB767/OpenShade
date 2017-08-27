@@ -134,8 +134,7 @@ namespace OpenShade.Classes
         public string description { get; set; }
         public bool isEnabled { get; set; }
         public List<Parameter> parameters { get; set; }
-
-        // This following bit of code is absolutely awful, but Hey! that's what MVVM people do!
+        
         private bool _stateChanged;
         public bool stateChanged { // to know if the tweak was switched enabled/disabled
             get {
@@ -144,16 +143,13 @@ namespace OpenShade.Classes
             set {
                 _stateChanged = value;
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("stateChanged"));
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("hasChanged"));
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("containsChanges"));
             }
-        }       
-        private bool _hasChanged;
-        public bool hasChanged        {
-            get { return parameters.Exists(p => p.hasChanged == true); }
-            set {
-                _hasChanged = value;
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("hasChanged"));
-            }
+        }
+
+        public bool containsChanges
+        {
+            get { return parameters.Exists(p => p.hasChanged == true); }            
         }        
 
         public BaseTweak(string Key, string Name, string Descr)

@@ -352,7 +352,6 @@ namespace OpenShade.Classes
 
         public void LoadSettings(string filepath)
         {
-
             // TODO: Ignore comments and blank lines
             // TODO: Error checking
 
@@ -370,12 +369,13 @@ namespace OpenShade.Classes
                 {
                     switch (parts[0])
                     {
-                        case "Preset":
-                            mainWindowHandle.activePresetPath = parts[1].Trim();
-                            mainWindowHandle.loadedPresetPath = mainWindowHandle.activePresetPath;
-                            mainWindowHandle.LoadedPreset_Label.Content = Path.GetFileNameWithoutExtension(mainWindowHandle.loadedPresetPath); // TODO: Replace with proper binding
-                            mainWindowHandle.ActivePreset_Label.Content = Path.GetFileNameWithoutExtension(mainWindowHandle.activePresetPath);
+                        case "Active_Preset":
+                            mainWindowHandle.activePresetPath = parts[1].Trim(); 
                             break;
+
+                        case "Loaded_Preset":
+                            mainWindowHandle.loadedPresetPath = parts[1].Trim();
+                        break;
 
                         case "Theme":
                             Themes current;
@@ -419,17 +419,16 @@ namespace OpenShade.Classes
         {
             List<string> lines = new List<string>();
 
-            if (mainWindowHandle.activePresetPath != null)
-            {
-                lines.Add("Preset, " + mainWindowHandle.activePresetPath);
-                lines.Add("Theme, " + ((App)Application.Current).CurrentTheme.ToString());
-                lines.Add("Backup_Directory, " + mainWindowHandle.backupDirectory);
-                lines.Add("Main_Width, " + mainWindowHandle.Width.ToString());
-                lines.Add("Main_Height, " + mainWindowHandle.Height.ToString());
-                lines.Add("Col1_Width, " + mainWindowHandle.Tweaks_Grid.ColumnDefinitions[0].Width.ToString());
-                lines.Add("Col2_Width, " + mainWindowHandle.Post_Grid.ColumnDefinitions[0].Width.ToString());
-                lines.Add("Col3_Width, " + mainWindowHandle.Custom_Grid.ColumnDefinitions[0].Width.ToString());
-            }
+            if (mainWindowHandle.activePresetPath != null) { lines.Add("Active_Preset, " + mainWindowHandle.activePresetPath); }
+            if (mainWindowHandle.loadedPresetPath != null) { lines.Add("Loaded_Preset, " + mainWindowHandle.loadedPresetPath); }
+
+            lines.Add("Theme, " + ((App)Application.Current).CurrentTheme.ToString());
+            lines.Add("Backup_Directory, " + mainWindowHandle.backupDirectory);
+            lines.Add("Main_Width, " + mainWindowHandle.Width.ToString());
+            lines.Add("Main_Height, " + mainWindowHandle.Height.ToString());
+            lines.Add("Col1_Width, " + mainWindowHandle.Tweaks_Grid.ColumnDefinitions[0].Width.ToString());
+            lines.Add("Col2_Width, " + mainWindowHandle.Post_Grid.ColumnDefinitions[0].Width.ToString());
+            lines.Add("Col3_Width, " + mainWindowHandle.Custom_Grid.ColumnDefinitions[0].Width.ToString());         
 
             try
             {

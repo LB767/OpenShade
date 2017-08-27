@@ -90,7 +90,7 @@
                         </Style>
                     </Button.Style>
                 </Button>
-                <Button x:Name="ResetShaderFiles_btn" HorizontalAlignment="Left" Height="20" Margin="10" Click="ResetShaderFiles" ToolTip="Restore default shader files" ContentTemplate="{DynamicResource ResetSettingsIcon}">
+                <Button x:Name="ResetShaderFiles_btn" HorizontalAlignment="Left" Height="20" Margin="10" Click="ResetShaderFiles" ToolTip="Restore default shader files" ContentTemplate="{DynamicResource ResetShadersIcon}">
                     <Button.Style>
                         <Style TargetType="Button" BasedOn="{StaticResource IconButton}">
                             <Style.Triggers>
@@ -112,6 +112,32 @@
                         </Style>
                     </Button.Style>
                 </Button>
+
+                <Border Style="{StaticResource SeparatorStyle}" Margin="5,5,5,5"/>
+
+                <Button x:Name="ResetToPreset_btn" HorizontalAlignment="Left" Height="20" Margin="10" Click="ResetToPreset" ToolTip="Reset all tweaks to the active preset" ContentTemplate="{DynamicResource ResetToPresetIcon}">
+                    <Button.Style>
+                        <Style TargetType="Button" BasedOn="{StaticResource IconButton}">
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Foreground" Value="{DynamicResource MouseOverColor1}"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                </Button>
+                <Button x:Name="ResetToDefaults_btn" HorizontalAlignment="Left" Height="20" Margin="10" Click="ResetToDefaults" ToolTip="Reset all tweaks to their default value" ContentTemplate="{DynamicResource ResetToDefaultsIcon}">
+                    <Button.Style>
+                        <Style TargetType="Button" BasedOn="{StaticResource IconButton}">
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Foreground" Value="{DynamicResource MouseOverColor1}"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                </Button>
+
 
             </StackPanel>
             
@@ -182,7 +208,7 @@
                                         <Label.Style>
                                             <Style TargetType="Label" BasedOn="{StaticResource {x:Type Label}}">
                                                 <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding hasChanged}" Value="True">
+                                                    <DataTrigger Binding="{Binding containsChanges}" Value="True">
                                                         <Setter Property="Foreground" Value="Green" />
                                                     </DataTrigger>
                                                 </Style.Triggers>
@@ -252,7 +278,7 @@
                                         <Label.Style>
                                             <Style TargetType="Label" BasedOn="{StaticResource {x:Type Label}}">
                                                 <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding hasChanged}" Value="True">
+                                                    <DataTrigger Binding="{Binding containsChanges}" Value="True">
                                                         <Setter Property="Foreground" Value="Green" />
                                                     </DataTrigger>
                                                 </Style.Triggers>
