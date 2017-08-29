@@ -120,14 +120,11 @@ namespace OpenShade.Classes
                 }
                 tweak.isEnabled = pref.Read("IsActive", tweak.key) == "1" ? true : false;                
 
-                if (wasEnabled != tweak.isEnabled && monitorChanges)
+                if (!monitorChanges)
                 {
-                    tweak.stateChanged = true;
+                    tweak.wasEnabled = tweak.isEnabled;
                 }
-                else {
-                    tweak.stateChanged = false;
-                }
-                                
+                                           
                 foreach (var param in tweak.parameters)
                 {
                     param.oldValue = param.value;
@@ -154,13 +151,8 @@ namespace OpenShade.Classes
                         param.value = pref.Read(param.dataName, tweak.key);
                     }
 
-                    if (param.value != param.oldValue && monitorChanges) // TODO: In some cases this evaluates to false because of stuff like "1.0" != "1.00" ... not sure what's the best thing to do
-                    { 
-                        param.hasChanged = true;
-                    }
-                    else {
+                    if (!monitorChanges) {
                         param.oldValue = param.value;
-                        param.hasChanged = false;
                     }
                 }                
             }           
@@ -206,13 +198,10 @@ namespace OpenShade.Classes
                 }
                 post.isEnabled = pref.Read("IsActive", post.key) == "1" ? true : false;
 
-                if (wasEnabled != post.isEnabled && monitorChanges)
+                if (!monitorChanges)
                 {
-                    post.stateChanged = true;
-                }
-                else {
-                    post.stateChanged = false;
-                }
+                    post.wasEnabled = post.isEnabled;
+                }                
 
                 post.index = int.Parse(pref.Read("Index", post.key));
 
@@ -245,14 +234,9 @@ namespace OpenShade.Classes
                         if (identifiedLine == null) { mainWindowHandle.Log(ErrorType.Warning, "Missing entry '" + param.dataName + "' for post-process [" + post.key + "]"); break; }
                         param.value = identifiedLine.Split('=')[1];
                     }
-
-                    if (param.value != param.oldValue && monitorChanges)
-                    {
-                        param.hasChanged = true;
-                    }
-                    else {
-                        param.oldValue = param.value; // put the current value as old value, for instance when we load the first preset
-                        param.hasChanged = false;
+                    
+                    if (!monitorChanges) {
+                        param.oldValue = param.value;
                     }
                 }                
             }
@@ -419,8 +403,8 @@ namespace OpenShade.Classes
         {
             List<string> lines = new List<string>();
 
-            if (mainWindowHandle.activePresetPath != null) { lines.Add("Active_Preset, " + mainWindowHandle.activePresetPath); }
-            if (mainWindowHandle.loadedPresetPath != null) { lines.Add("Loaded_Preset, " + mainWindowHandle.loadedPresetPath); }
+            if (mainWindowHandle.activePresetPath != null && File.Exists(mainWindowHandle.activePresetPath)) { lines.Add("Active_Preset, " + mainWindowHandle.activePresetPath); }
+            if (mainWindowHandle.loadedPresetPath != null && File.Exists(mainWindowHandle.loadedPresetPath)) { lines.Add("Loaded_Preset, " + mainWindowHandle.loadedPresetPath); }
 
             lines.Add("Theme, " + ((App)Application.Current).CurrentTheme.ToString());
             lines.Add("Backup_Directory, " + mainWindowHandle.backupDirectory);

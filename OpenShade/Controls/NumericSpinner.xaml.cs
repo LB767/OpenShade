@@ -156,22 +156,25 @@ namespace OpenShade.Controls
             if (Value > MaxValue) Value = MaxValue;
 
             Value = decimal.Round(Value, Decimals);
+            ValueChanged?.Invoke(this, EventArgs.Empty);
         }
 
         private void cmdUp_Click(object sender, RoutedEventArgs e)
         {
             Value += Step;
+            ValueChanged?.Invoke(this, EventArgs.Empty);
         }
 
         private void cmdDown_Click(object sender, RoutedEventArgs e)
         {
             Value -= Step;
+            ValueChanged?.Invoke(this, EventArgs.Empty);
         }
 
         private void tb_main_PreviewTextInput(object sender, System.Windows.Input.TextCompositionEventArgs e)
         {
             Regex regex = new Regex("^([0-9]|\\.)\\.?[0-9]*");
-            e.Handled = !regex.IsMatch(e.Text);           
+            e.Handled = !regex.IsMatch(e.Text);
         }
 
         private void tb_main_LostFocus(object sender, RoutedEventArgs e)
@@ -185,6 +188,7 @@ namespace OpenShade.Controls
             {
                 tb_main.Text = MinValue.ToString();
             }
-        }         
+        }
+
     }
 }

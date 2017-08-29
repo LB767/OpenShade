@@ -23,7 +23,7 @@ namespace OpenShade
     /// 
     public enum ErrorType { None, Warning, Error };
 
-
+    
     public partial class MainWindow : Window
     {
         string tweaksHash;
@@ -71,6 +71,9 @@ namespace OpenShade
 
             Tweak.GenerateTweaksData(tweaks);
             PostProcess.GeneratePostProcessData(postProcesses);
+
+            ClearChangesInfo(tweaks);
+            ClearChangesInfo(postProcesses);
 
             Tweak_List.ItemsSource = tweaks;
             CustomTweak_List.ItemsSource = customTweaks;
@@ -152,13 +155,13 @@ namespace OpenShade
                         Log(ErrorType.None, "Preset [" + loadedPreset.filename + "] loaded");
                     }
                     catch (Exception ex)
-                    {
+                    {                        
                         Log(ErrorType.Error, "Failed to load preset file [" + loadedPresetPath + "]. " + ex.Message);
                     }
                 }
                 else
-                {
-                    Log(ErrorType.Error, "Active Preset file [" + loadedPresetPath + "] not found");
+                {                    
+                    Log(ErrorType.Error, "Loaded Preset file [" + loadedPresetPath + "] not found");
                 }
             }
 
@@ -225,12 +228,33 @@ namespace OpenShade
             if (HelperFunctions.GetDictHashCode(tweaks) != tweaksHash ||
                 HelperFunctions.GetDictHashCode(customTweaks) != customTweaksHash || 
                 HelperFunctions.GetDictHashCode(postProcesses) != postProcessesHash || 
-                comment != commentHash)
+                comment != commentHash ||
+                !File.Exists(loadedPresetPath))
             {
-                MessageBoxResult result = MessageBox.Show("Some changes for the preset [" + loadedPreset.filename + "] were not saved.\r\nWould you like to save them now?", "Save", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
-                if (result == MessageBoxResult.Yes)
+                if (loadedPreset != null)
                 {
-                    SavePreset_Click(null, null);
+                    MessageBoxResult result = MessageBox.Show("Some changes for the preset [" + loadedPreset.filename + "] were not saved.\r\nWould you like to save them now?", "Save", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+                    if (result == MessageBoxResult.Yes)
+                    {
+                        SavePreset_Click(null, null);
+                    }
+                }
+                else {
+                    loadedPresetPath = currentDirectory + "\\custom_preset.ini";
+                    int i = 1;
+                    while (File.Exists(loadedPresetPath))
+                    {
+                        i++;
+                        loadedPresetPath = currentDirectory + "\\custom_preset_" + i.ToString() + ".ini";
+                    }
+
+                    loadedPreset = new IniFile(loadedPresetPath);
+
+                    MessageBoxResult result = MessageBox.Show("Some changes were not saved.\r\nWould you like to save them now as a new preset ["+ loadedPreset.filename + "] ?", "Save", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+                    if (result == MessageBoxResult.Yes)
+                    {                        
+                        SavePreset_Click(null, null);
+                    }
                 }
             }
 
@@ -299,10 +323,17 @@ namespace OpenShade
 
             CustomTweak selectedTweak = (CustomTweak)CustomTweak_List.SelectedItem;
             selectedTweak.shaderFile = (string)CustomTweakShaderFile_ComboBox.SelectedItem;
+        }            
+        #endregion
+
+        #region PostProcesses        
+        private void PostProcessList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            List_SelectionChanged(PostProcess_List, PostProcessStack, PostClearStack, PostTitleTextblock, PostDescriptionTextblock);
         }
 
         // DRAG & DROP ----------------------------------------------------
-        private void PreviewMouseMoveEventHandler(object sender, MouseEventArgs e)
+        private void MouseMoveEventHandler(object sender, MouseEventArgs e)
         {
             if (sender is ListViewItem && e.LeftButton == MouseButtonState.Pressed)
             {
@@ -338,14 +369,6 @@ namespace OpenShade
 
             PostProcess_List.Items.Refresh();
         }
-
-        #endregion
-
-        #region PostProcesses        
-        private void PostProcessList_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            List_SelectionChanged(PostProcess_List, PostProcessStack, PostClearStack, PostTitleTextblock, PostDescriptionTextblock);
-        }
         #endregion
 
         #region ParametersUpdates
@@ -376,8 +399,8 @@ namespace OpenShade
                     clearStack.Children.Add(resetButton);
 
                     Button clearButton = new Button();
-                    clearButton.Content = "Reset preset";
-                    clearButton.ToolTip = "Reset parameters to their value in the active preset";
+                    clearButton.Content = "Reset previous";
+                    clearButton.ToolTip = "Reset parameters to their previous value";
                     clearButton.Width = 100;
                     clearButton.Height = 25;
                     clearButton.VerticalAlignment = VerticalAlignment.Top;
@@ -424,7 +447,7 @@ namespace OpenShade
                             Rtext.Value = decimal.Parse(param.value.Split(',')[0]);
                             Rtext.MinValue = param.min;
                             Rtext.MaxValue = param.max;
-                            Rtext.LostFocus += new RoutedEventHandler(RGB_LostFocus);
+                            Rtext.PropertyChanged += new EventHandler(RGB_ValueChanged);
 
                             var Gtext = new NumericSpinner();
                             Gtext.Uid = param.id + "_G";
@@ -433,7 +456,7 @@ namespace OpenShade
                             Gtext.Value = decimal.Parse(param.value.Split(',')[1]);
                             Gtext.MinValue = param.min;
                             Gtext.MaxValue = param.max;
-                            Gtext.LostFocus += new RoutedEventHandler(RGB_LostFocus);
+                            Gtext.PropertyChanged += new EventHandler(RGB_ValueChanged);
 
                             var Btext = new NumericSpinner();
                             Btext.Uid = param.id + "_B";
@@ -442,7 +465,7 @@ namespace OpenShade
                             Btext.Value = decimal.Parse(param.value.Split(',')[2]);
                             Btext.MinValue = param.min;
                             Btext.MaxValue = param.max;
-                            Btext.LostFocus += new RoutedEventHandler(RGB_LostFocus);
+                            Btext.PropertyChanged += new EventHandler(RGB_ValueChanged);
 
                             container.Children.Add(Rtext);
                             container.Children.Add(Gtext);
@@ -463,7 +486,7 @@ namespace OpenShade
                             spinner.MinValue = param.min;
                             spinner.MaxValue = param.max;
                             spinner.Step = 0.1m;                           
-                            spinner.LostFocus += new RoutedEventHandler(ParameterSpinner_LostFocus);
+                            spinner.ValueChanged += new EventHandler(ParameterSpinner_ValueChanged);
 
                             var item = new MenuItem();
                             item.Header = "Make Custom";
@@ -481,7 +504,7 @@ namespace OpenShade
                             txtbox.VerticalContentAlignment = VerticalAlignment.Top;
                             //spinner.TextWrapping = TextWrapping.Wrap;
                             txtbox.Text = param.value;
-                            txtbox.LostFocus += new RoutedEventHandler(ParameterText_LostFocus);
+                            txtbox.KeyUp += new KeyEventHandler(ParameterText_KeyUp);
 
                             item = new MenuItem();
                             item.Header = "Make Default";
@@ -523,28 +546,27 @@ namespace OpenShade
 
                             rowStack.Children.Add(combo);
                         }
+                        
+                        TextBox changeTxtbox = new TextBox();                        
+                        changeTxtbox.IsReadOnly = true;
+                        changeTxtbox.Background = Brushes.Transparent;
+                        changeTxtbox.Foreground = Brushes.Orange;
+                        changeTxtbox.BorderThickness = new Thickness(0);
+                        changeTxtbox.Width = 170;
+                        changeTxtbox.Height = 30;
+                        changeTxtbox.Margin = new Thickness(10, 0, 10, 0);
+                        changeTxtbox.Visibility = param.hasChanged ? Visibility.Visible : Visibility.Collapsed;
+                        changeTxtbox.Uid = param.id + "-changeTxtbox";
 
-                        if (param.hasChanged)
+                        if (param.control == UIType.Checkbox)
                         {
-                            TextBox changeTxtbox = new TextBox();                           
-                            changeTxtbox.IsReadOnly = true;
-                            changeTxtbox.Background = Brushes.Transparent;
-                            changeTxtbox.Foreground = Brushes.Orange;
-                            changeTxtbox.BorderThickness = new Thickness(0);
-                            changeTxtbox.Width = 170;
-                            changeTxtbox.Height = 30;
-                            changeTxtbox.Margin = new Thickness(10, 0, 10, 0);
-                            
-                            if (param.control == UIType.Checkbox)
-                            {
-                                changeTxtbox.Text = (param.oldValue == "1") ? "Enabled" : "Disabled";
-                            }
-                            else {
-                                changeTxtbox.Text = param.oldValue;
-                            }
+                            changeTxtbox.Text = (param.oldValue == "1") ? "Enabled" : "Disabled";
+                        }
+                        else {
+                            changeTxtbox.Text = param.oldValue;
+                        }
 
-                            rowStack.Children.Add(changeTxtbox);
-                        }                        
+                        rowStack.Children.Add(changeTxtbox);                        
 
                         StackGrid.Children.Add(rowStack);
                     }
@@ -565,8 +587,8 @@ namespace OpenShade
             Parameter param = null;
 
             if (currentTab.Name == "Tweak_Tab") { param = ((Tweak)Tweak_List.SelectedItem).parameters.First(p => p.id == checkbox.Uid); }
-            if (currentTab.Name == "Post_Tab") { param = ((PostProcess)PostProcess_List.SelectedItem).parameters.First(p => p.id == checkbox.Uid); }         
-
+            if (currentTab.Name == "Post_Tab") { param = ((PostProcess)PostProcess_List.SelectedItem).parameters.First(p => p.id == checkbox.Uid); }
+                       
             if (checkbox.IsChecked == true)
             {
                 param.value = "1";
@@ -575,9 +597,15 @@ namespace OpenShade
             {
                 param.value = "0";
             }
+
+            // TODO: This is terrible code, but it simplifies things for now...
+            TextBox tb = null;
+            if (currentTab.Name == "Tweak_Tab") { tb = (TextBox)HelperFunctions.FindUid(TweakStack, param.id + "-changeTxtbox"); }
+            if (currentTab.Name == "Post_Tab") { tb = (TextBox)HelperFunctions.FindUid(PostProcessStack, param.id + "-changeTxtbox"); }
+            tb.Visibility = param.hasChanged ? Visibility.Visible : Visibility.Collapsed;
         }
 
-        private void ParameterText_LostFocus(object sender, EventArgs e)
+        private void ParameterText_KeyUp(object sender, EventArgs e)
         {
             TextBox txtBox = (TextBox)sender;
             TabItem currentTab = HelperFunctions.FindAncestorOrSelf<TabItem>(txtBox);            
@@ -587,10 +615,17 @@ namespace OpenShade
             if (currentTab.Name == "Post_Tab") { param = ((PostProcess)PostProcess_List.SelectedItem).parameters.First(p => p.id == txtBox.Uid); }
             if (currentTab.Name == "Custom_Tab") { ((CustomTweak)CustomTweak_List.SelectedItem).name = txtBox.Text; } // NOTE: Maybe unify this to behave like tweaks and post-processes
 
-            if (currentTab.Name != "Custom_Tab") { param.value = txtBox.Text; }
+            if (currentTab.Name != "Custom_Tab") {                
+                param.value = txtBox.Text;
+
+                TextBox tb = null;
+                if (currentTab.Name == "Tweak_Tab") { tb = (TextBox)HelperFunctions.FindUid(TweakStack, param.id + "-changeTxtbox"); }
+                if (currentTab.Name == "Post_Tab") { tb = (TextBox)HelperFunctions.FindUid(PostProcessStack, param.id + "-changeTxtbox"); }
+                tb.Visibility = param.hasChanged ? Visibility.Visible : Visibility.Collapsed;
+            }
         }
 
-        private void ParameterSpinner_LostFocus(object sender, EventArgs e)
+        private void ParameterSpinner_ValueChanged(object sender, EventArgs e)
         {
             NumericSpinner spinner = (NumericSpinner)sender;
             TabItem currentTab = HelperFunctions.FindAncestorOrSelf<TabItem>(spinner);
@@ -599,7 +634,14 @@ namespace OpenShade
             if (currentTab.Name == "Tweak_Tab") { param = ((Tweak)Tweak_List.SelectedItem).parameters.First(p => p.id == spinner.Uid); }
             if (currentTab.Name == "Post_Tab") { param = ((PostProcess)PostProcess_List.SelectedItem).parameters.First(p => p.id == spinner.Uid); }            
 
-            if (currentTab.Name != "Custom_Tab") { param.value = spinner.Value.ToString(); }
+            if (currentTab.Name != "Custom_Tab") {                
+                param.value = spinner.Value.ToString();
+
+                TextBox tb = null;
+                if (currentTab.Name == "Tweak_Tab") { tb = (TextBox)HelperFunctions.FindUid(TweakStack, param.id + "-changeTxtbox"); }
+                if (currentTab.Name == "Post_Tab") { tb = (TextBox)HelperFunctions.FindUid(PostProcessStack, param.id + "-changeTxtbox"); }
+                tb.Visibility = param.hasChanged ? Visibility.Visible : Visibility.Collapsed;
+            }
         }
 
         private void ParameterSwitch_Click(object sender, EventArgs e)
@@ -607,31 +649,32 @@ namespace OpenShade
             MenuItem item = (MenuItem)sender;
 
             TabItem currentTab = HelperFunctions.FindAncestorOrSelf<TabItem>((DependencyObject)item.Tag);
-            StackPanel currentStack = null;
-
-            if (currentTab.Name == "Tweak_Tab") { currentStack = TweakStack; }
-            if (currentTab.Name == "Post_Tab") { currentStack = PostProcessStack; }            
-
+            StackPanel stackRow = HelperFunctions.FindAncestorOrSelf<StackPanel>((DependencyObject)item.Tag);
+    
             if (item.Tag.GetType() == typeof(NumericSpinner))
             {
                 NumericSpinner control = (NumericSpinner)item.Tag;
-                int index = currentStack.Children.IndexOf(control);
+                int index = stackRow.Children.IndexOf(control);
 
                 control.Visibility = Visibility.Collapsed;
-                currentStack.Children[index + 1].Visibility = Visibility.Visible;
+                stackRow.Children[index + 1].Visibility = Visibility.Visible;
+
+                ParameterText_KeyUp(stackRow.Children[index + 1], new RoutedEventArgs());
             }
 
-            else if (item.Tag.GetType() == typeof(TextBox))
+            else if (item.Tag.GetType() == typeof(TextBox)) // TODO: possible bug here still
             {
                 TextBox control = (TextBox)item.Tag;
-                int index = currentStack.Children.IndexOf(control);
+                int index = stackRow.Children.IndexOf(control);
 
                 control.Visibility = Visibility.Collapsed;
-                currentStack.Children[index - 1].Visibility = Visibility.Visible;
+                stackRow.Children[index - 1].Visibility = Visibility.Visible;
+
+                ParameterSpinner_ValueChanged(stackRow.Children[index - 1], new RoutedEventArgs());
             }
         }
 
-        private void RGB_LostFocus(object sender, EventArgs e)
+        private void RGB_ValueChanged(object sender, EventArgs e)
         {
             NumericSpinner spinner = (NumericSpinner)sender;
 
@@ -647,7 +690,7 @@ namespace OpenShade
             string oldR = param.value.Split(',')[0];
             string oldG = param.value.Split(',')[1];
             string oldB = param.value.Split(',')[2];
-
+                        
             switch (channel)
             {
                 case "R":
@@ -660,6 +703,11 @@ namespace OpenShade
                     param.value = oldR + "," + oldG + "," + spinner.Value.ToString();
                     break;
             }
+
+            TextBox tb = null;
+            if (currentTab.Name == "Tweak_Tab") { tb = (TextBox)HelperFunctions.FindUid(TweakStack, param.id + "-changeTxtbox"); }
+            if (currentTab.Name == "Post_Tab") { tb = (TextBox)HelperFunctions.FindUid(PostProcessStack, param.id + "-changeTxtbox"); }
+            tb.Visibility = param.hasChanged ? Visibility.Visible : Visibility.Collapsed;
         }
 
         private void Combobox_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -672,7 +720,14 @@ namespace OpenShade
             if (currentTab.Name == "Post_Tab") { param = ((PostProcess)PostProcess_List.SelectedItem).parameters.First(p => p.id == combo.Uid); }
             if (currentTab.Name == "Custom_Tab") { ((CustomTweak)CustomTweak_List.SelectedItem).name = combo.Text; }
 
-            if (currentTab.Name != "Custom_Tab") { param.value = combo.SelectedIndex.ToString(); }
+            if (currentTab.Name != "Custom_Tab") {                
+                param.value = combo.SelectedIndex.ToString();
+
+                TextBox tb = null;
+                if (currentTab.Name == "Tweak_Tab") { tb = (TextBox)HelperFunctions.FindUid(TweakStack, param.id + "-changeTxtbox"); }
+                if (currentTab.Name == "Post_Tab") { tb = (TextBox)HelperFunctions.FindUid(PostProcessStack, param.id + "-changeTxtbox"); }
+                tb.Visibility = param.hasChanged ? Visibility.Visible : Visibility.Collapsed;
+            }
         }
 
         private void RichTextBox_LostFocus(object sender, EventArgs e)
@@ -776,33 +831,13 @@ namespace OpenShade
 
         private void NewPreset_Click(object sender, RoutedEventArgs e)
         {
-            foreach (var tweak in tweaks)
-            {
-                tweak.isEnabled = false;
-                
-                foreach (var param in tweak.parameters)
-                {
-                    param.value = param.defaultValue;
-                }                
-            }
-
-            foreach (var post in postProcesses)
-            {
-                post.isEnabled = false;
-                
-                foreach (var param in post.parameters)
-                {
-                    param.value = param.defaultValue;
-                }                
-            }
-
-            PresetComments_TextBox.Text = "";
-            customTweaks.Clear();
-            CustomTweak_List.Items.Refresh();
+            // When creating a new preset, we choose to KEEP all the parameters that were on the previous preset instead of clearing everything.
+            // This seems to make more sense, if the user wants to reset everything, there's a button for that.           
 
             loadedPresetPath = currentDirectory + "\\custom_preset.ini";
-            int i = 2;
+            int i = 1;
             while (File.Exists(loadedPresetPath)) {
+                i++;
                 loadedPresetPath = currentDirectory + "\\custom_preset_" + i.ToString() + ".ini";
             }
 
@@ -865,6 +900,9 @@ namespace OpenShade
             postProcessesHash = HelperFunctions.GetDictHashCode(postProcesses);
             commentHash = comment;
 
+            List_SelectionChanged(Tweak_List, TweakStack, TweakClearStack, TweakTitleTextblock, TweakDescriptionTextblock);
+            List_SelectionChanged(PostProcess_List, PostProcessStack, PostClearStack, PostTitleTextblock, PostDescriptionTextblock);
+
             Tweak_List.Items.Refresh();
             PostProcess_List.Items.Refresh();
             CustomTweak_List.Items.Refresh();                     
@@ -872,7 +910,7 @@ namespace OpenShade
 
         private void SavePreset_Click(object sender, RoutedEventArgs e)
         {
-            try
+            try // TODO: Do we want to reset changes when we save?
             {
                 comment = PresetComments_TextBox.Text;
                 fileData.SavePreset(tweaks, customTweaks, postProcesses, comment, loadedPreset);
@@ -1850,14 +1888,27 @@ float3 blur_ori;
                 return;
             }
 
-            activePresetPath = loadedPresetPath;
-            activePreset = loadedPreset;
-            ActivePreset_Label.Content = activePreset.filename;
+            if (loadedPreset != null)
+            {
+                activePresetPath = loadedPresetPath;
+                activePreset = loadedPreset;
+                ActivePreset_Label.Content = activePreset.filename;
 
-            Log(ErrorType.None, "Preset [" + activePreset.filename + "] applied. " 
-                + tweakCount + "/" + tweaks.Count(p => p.isEnabled == true) + " tweaks applied. " 
-                + customCount + "/" + customTweaks.Count(p => p.isEnabled == true) + " custom tweaks applied. " 
-                + postCount + "/" + postProcesses.Count(p => p.isEnabled == true) + " post-processes applied.");
+                Log(ErrorType.None, "Preset [" + activePreset.filename + "] applied. "
+                    + tweakCount + "/" + tweaks.Count(p => p.isEnabled == true) + " tweaks applied. "
+                    + customCount + "/" + customTweaks.Count(p => p.isEnabled == true) + " custom tweaks applied. "
+                    + postCount + "/" + postProcesses.Count(p => p.isEnabled == true) + " post-processes applied.");
+            }
+            else {
+                activePresetPath = loadedPresetPath; // becomes null
+                activePreset = loadedPreset; // becomes null
+                ActivePreset_Label.Content = "";
+
+                Log(ErrorType.None, "Tweaks applied. "
+                    + tweakCount + "/" + tweaks.Count(p => p.isEnabled == true) + " tweaks applied. "
+                    + customCount + "/" + customTweaks.Count(p => p.isEnabled == true) + " custom tweaks applied. "
+                    + postCount + "/" + postProcesses.Count(p => p.isEnabled == true) + " post-processes applied.");
+            }
 
             try
             {
@@ -1957,11 +2008,10 @@ float3 blur_ori;
             foreach (T entry in effectsList)
             {
                 BaseTweak effect = entry as BaseTweak;
+                effect.wasEnabled = effect.isEnabled;
                 foreach (var param in effect.parameters) {
-                    param.hasChanged = false;
-                }
-                effect.stateChanged = false; // NOTE: This has to be here at the end, because this can raise a property change even in the tweak class,
-                                             //       after parameters have has their 'hasChanged' cleared to 'false'
+                    param.oldValue = param.value;
+                }                
             }           
         }
 

@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
+using System.Windows.Data;
 
 namespace OpenShade.Classes
 {
@@ -20,6 +22,7 @@ namespace OpenShade.Classes
         Combobox
     }
 
+
     public class RGB {
         public double R;
         public double G;
@@ -37,19 +40,34 @@ namespace OpenShade.Classes
         }
     }
 
-    public class Parameter {
+    public class Parameter : INotifyPropertyChanged
+    {
         public string id;
         public string dataName; // name of the parameter in the .ini file
         public string name; // name of the parameter in the UI
         public string description;
-        public string value;       
+
+        private string _oldValue;
+        public string oldValue   {
+            get { return _oldValue; }
+            set { _oldValue = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("oldValue")); }
+        }    
+        private string _value;
+        public string value
+        {
+            get { return _value; }
+            set { _value = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("value")); }
+        }
         public string defaultValue;
+
         public decimal min;
         public decimal max;
         public List<string> range;
         public UIType control;
-        public bool hasChanged = false; // TODO: We might wanna get rid of this now?
-        public string oldValue; // value used on a previous preset (if it exists)
+        
+        public bool hasChanged {
+            get { return oldValue != value; } // TODO: In some cases this evaluates to false because of stuff like "1.0" != "1.00" ... not sure what's the best thing to do
+        }
 
         public Parameter() { }
 
@@ -126,31 +144,44 @@ namespace OpenShade.Classes
             range = ValueRange;
             control = Control;
         }
+
+        public event PropertyChangedEventHandler PropertyChanged;
     }
 
     public class BaseTweak : INotifyPropertyChanged {
         public string key;
         public string name { get; set; }
         public string description { get; set; }
-        public bool isEnabled { get; set; }
-        public List<Parameter> parameters { get; set; }
-        
-        private bool _stateChanged;
-        public bool stateChanged { // to know if the tweak was switched enabled/disabled
-            get {
-                return _stateChanged;
-            }
-            set {
-                _stateChanged = value;
+
+        private bool _wasEnabled;
+        public bool wasEnabled
+        {
+            get { return _wasEnabled; }
+            set
+            {
+                _wasEnabled = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("wasEnabled"));
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("stateChanged"));
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("containsChanges"));
             }
         }
-
-        public bool containsChanges
-        {
-            get { return parameters.Exists(p => p.hasChanged == true); }            
+        private bool _isEnabled;
+        public bool isEnabled {
+            get { return _isEnabled; }
+            set
+            {
+                _isEnabled = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("isEnabled"));
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("stateChanged"));
+            }
         }        
+        
+        public bool stateChanged { // to know if the tweak was switched enabled/disabled
+            get { return wasEnabled != isEnabled; }            
+        }
+
+        public bool containsChanges { get { return parameters.Any(p => p.hasChanged == true); } }
+
+        public BindingList<Parameter> parameters { get; set; }
 
         public BaseTweak(string Key, string Name, string Descr)
         {
@@ -158,7 +189,13 @@ namespace OpenShade.Classes
             name = Name;
             description = Descr;
             isEnabled = false;
-            parameters = new List<Parameter>() { };
+            parameters = new BindingList<Parameter>() { };
+            parameters.ListChanged += new ListChangedEventHandler(ContentListChanged);
+        }
+
+        public void ContentListChanged(object sender, ListChangedEventArgs e)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("containsChanges"));
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -208,7 +245,7 @@ namespace OpenShade.Classes
             tweaks.Add(newTweak);
 
             newTweak = new Tweak("CLOUDS_CLOUD_SHADOWS_DEPTH_NEW", Category.Clouds, "Cloud shadow depth", "");
-            newTweak.parameters.Add(new Parameter("FDepthFactor", "Shadow depth", 0.15, 0.15, 0.01, 0.25, UIType.Text));
+            newTweak.parameters.Add(new Parameter("FDepthFactor", "Shadow depth", 0.15, 0.15, 0.01, 100, UIType.Text));
             tweaks.Add(newTweak);
 
             newTweak = new Tweak("CLOUDS_CLOUD_SHADOWS_SIZE", Category.Clouds, "Cloud shadow extended size", "");
@@ -400,7 +437,6 @@ namespace OpenShade.Classes
 
         public static void GeneratePostProcessData(List<PostProcess> postProcesses)
         {
-            // NOTE: I removed DayNightUse, because I don't know what it actually does
             var newPost = new PostProcess("POSTPROCESS_SHADER Sepia", "Sepia", 0, "Sepia desaturates and colorizes the image with a specified color. The most obvious application is the traditional old-time photograph effect where the image colors are faded and then overlayed with a yellowish color, but other effects are possible for those seeking a quick two-in-one desaturation/toning effect on the image.");
             newPost.parameters.Add(new Parameter("ColorToneX,ColorToneY,ColorToneZ", "Color Tone", new RGB(1.4, 1.1, 0.9), new RGB(1.4, 1.1, 0.9), 0, 2.55, UIType.RGB, "ColorTone values 0.00 to 2.55 can be thought of as equivalents to 0 to 255.To find a sepia color, open the GIMP color chooser and note the RGB values of the selected color.\r\n\r\nSuppose we want to add a dark yellow. RGB = 173, 171, 59. Add a decimal point two places to the left in each value to produce 1.73, 1.71, and 0.59. Use those values for ColorTone."));
             newPost.parameters.Add(new Parameter("GreyPower", "Grey Power", 0.11, 0.11, 0, 1, UIType.Text, "Desaturates the image this much before tinting.\r\n\r\nIf GreyPower is over 1.00, then the image will appear over - whitened."));
