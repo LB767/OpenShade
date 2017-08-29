@@ -32,4 +32,6 @@ Make sure you have Microsoft .Net Framework 4.5.2 or later installed on your mac
 ## Acknowledgments
 Massive thanks to Yuri (KNOSSOS) for creating the original program, only someone with great graphics rendering knowledge could come up with such a tool, and these people are rare!
 
-Matt Davies and the SimTweaks crew for investing in PTA and porting in over to P3D v4 from the get-go.
+Matt Davies and the SimTweaks crew for investing in PTA and porting it over to P3D v4 from the get-go.
+
+Crosire for his [reshade-shaders](https://github.com/crosire/reshade-shaders) repository that is used in OpenShade for post-processes.
