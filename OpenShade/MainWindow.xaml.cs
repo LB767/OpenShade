@@ -912,9 +912,24 @@ namespace OpenShade
         {
             try // TODO: Do we want to reset changes when we save?
             {
+                if (loadedPreset == null) {
+                    loadedPresetPath = currentDirectory + "\\custom_preset.ini";
+                    
+                    int i = 1;
+                    while (File.Exists(loadedPresetPath))
+                    {
+                        i++;
+                        loadedPresetPath = currentDirectory + "\\custom_preset_" + i.ToString() + ".ini";
+                    }
+
+                    loadedPreset = new IniFile(loadedPresetPath);
+                    LoadedPreset_Label.Content = loadedPreset.filename;
+                }
+
                 comment = PresetComments_TextBox.Text;
                 fileData.SavePreset(tweaks, customTweaks, postProcesses, comment, loadedPreset);
 
+                // Update hashes
                 tweaksHash = HelperFunctions.GetDictHashCode(tweaks);
                 customTweaksHash = HelperFunctions.GetDictHashCode(customTweaks);
                 postProcessesHash = HelperFunctions.GetDictHashCode(postProcesses);
