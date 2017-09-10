@@ -515,6 +515,12 @@ namespace OpenShade.Classes
             newPost.parameters.Add(new Parameter("DayNightUse", "Time usage", "0", "0", new List<string>() { "Always", "Day only", "Night only", "Twilight", "Twilight+Day", "Twilight+Night" }, UIType.Combobox, ""));
             postProcesses.Add(newPost);
 
+            newPost = new PostProcess("POSTPROCESS_SHADER Colourfulness", "Colourfulness", 10, "The name says it all");
+            newPost.parameters.Add(new Parameter("colourfulness", "Colourfulness", 0.4, 0.4, -1, 2, UIType.Text, "Degree of colourfulness, 0 = neutral"));
+            newPost.parameters.Add(new Parameter("lim_luma", "Lim Luma", 0.7, 0.7, 0.1, 1, UIType.Text, "Lower values allow more change near clipping"));
+            newPost.parameters.Add(new Parameter("DayNightUse", "Time usage", "0", "0", new List<string>() { "Always", "Day only", "Night only", "Twilight", "Twilight+Day", "Twilight+Night" }, UIType.Combobox, ""));
+            postProcesses.Add(newPost);
+
         }
         
     }

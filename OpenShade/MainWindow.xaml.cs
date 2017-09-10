@@ -1872,6 +1872,60 @@ float3 blur_ori;
                             HDRText = HDRText.AddBefore(ref success, "return EndColor;", daynightStringStart + "EndColor = LumaSharpenMain(vert, EndColor);" + daynightStringEnd);
                             break;
 
+
+                        case "Colourfulness":
+                            HDRText = HDRText.AddBefore(ref success, "// Applies exposure and tone mapping to the input, and combines it with the",
+$@"float4 ColourfulnessMain(PsQuad vert, float4 color) : SV_Target
+{{
+
+const float colourfulness = {post.parameters[0].value};
+const float lim_luma = {post.parameters[1].value};
+
+// Sigmoid function, sign(v)*pow(pow(abs(v), -2) + pow(s, -2), 1.0/-2)
+#define soft_lim(v,s)  ( (v*s)*rcp(sqrt(s*s + v*v)) )
+
+// Weighted power mean, p = 0.5
+#define wpmean(a,b,w)  ( pow(abs(w)*sqrt(abs(a)) + abs(1-w)*sqrt(abs(b)), 2) )
+
+// Max/Min RGB components
+#define max3(RGB)      ( max((RGB).r, max((RGB).g, (RGB).b)) )
+#define min3(RGB)      ( min((RGB).r, min((RGB).g, (RGB).b)) )
+
+// Mean of Rec. 709 & 601 luma coefficients
+#define lumacoeff        float3(0.2558, 0.6511, 0.0931)
+
+    float4 colorInput = color;
+	float3 c0  = colorInput.rgb;
+	float luma = sqrt(dot(saturate(c0*abs(c0)), lumacoeff));
+	c0 = saturate(c0);
+	
+
+	// Calc colour saturation change
+	float3 diff_luma = c0 - luma;
+	float3 c_diff = diff_luma*(colourfulness + 1) - diff_luma;
+
+	if (colourfulness > 0.0)
+	{{
+        // 120% of c_diff clamped to max visible range + overshoot
+        float3 rlc_diff = clamp((c_diff*1.2) + c0, -0.0001, 1.0001) - c0;
+
+		// Calc max saturation-increase without altering RGB ratios
+		float poslim = (1.0002 - luma)/(abs(max3(diff_luma)) + 0.0001);
+		float neglim = (luma + 0.0002)/(abs(min3(diff_luma)) + 0.0001);
+
+		float3 diffmax = diff_luma*min(min(poslim, neglim), 32) - diff_luma;
+
+		// Soft limit diff
+		c_diff = soft_lim( c_diff, max(wpmean(diffmax, rlc_diff, lim_luma), 1e-6) );
+	}}
+
+colorInput.rgb = saturate(c0 + c_diff);
+return colorInput;
+}}
+");
+                            HDRText = HDRText.AddBefore(ref success, "return EndColor;", daynightStringStart + "EndColor = ColourfulnessMain(vert, EndColor);" + daynightStringEnd);
+                            break;
+
                     }
 
                     if (!success)
