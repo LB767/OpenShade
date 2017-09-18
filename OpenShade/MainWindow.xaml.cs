@@ -1314,7 +1314,7 @@ namespace OpenShade
                         case "Disable HDR with post-processes":
                             currentFile = FileIO.HDRFile;
                             HDRText = HDRText.CommentOut(ref success, "//Calculate the bloom.", "float3 finalColor = lerp(luminance, color, SaturationScalar);", true);
-                            HDRText = HDRText.ReplaceAll(ref success, "float3 color = srcTex.Sample(samClamp, vert.texcoord).rgb;", "float3 finalColor = srcTex.Sample(samClamp, vert.texcoord).rgb;");
+                            HDRText = HDRText.ReplaceSecond(ref success, "float3 color = srcTex.Sample(samClamp, vert.texcoord).rgb;", "float3 finalColor = srcTex.Sample(samClamp, vert.texcoord).rgb;");
                             break;
 
                             #endregion
