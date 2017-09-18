@@ -1311,6 +1311,12 @@ namespace OpenShade
                             HDRText = HDRText.ReplaceAll(ref success, "return max(exp(lumTex.Sample(samClamp, texCoord).x), 0.1f);", "return max((1-cb_mDayNightInterpolant) * 0.35, 0.1);");
                             break;
 
+                        case "Disable HDR with post-processes":
+                            currentFile = FileIO.HDRFile;
+                            HDRText = HDRText.CommentOut(ref success, "//Calculate the bloom.", "float3 finalColor = lerp(luminance, color, SaturationScalar);", true);
+                            HDRText = HDRText.ReplaceAll(ref success, "float3 color = srcTex.Sample(samClamp, vert.texcoord).rgb;", "float3 finalColor = srcTex.Sample(samClamp, vert.texcoord).rgb;");
+                            break;
+
                             #endregion
 
                     }

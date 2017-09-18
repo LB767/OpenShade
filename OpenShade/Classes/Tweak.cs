@@ -386,6 +386,9 @@ namespace OpenShade.Classes
             newTweak = new Tweak("HDR & POST-PROCESSING_HDRADAPTATION", Category.HDR, "Turn off HDR luminance adaptation effect", "");
             tweaks.Add(newTweak);
 
+            newTweak = new Tweak("HDR & POST-PROCESSING_POSTPROCESS", Category.HDR, "Disable HDR with post-processes", "");
+            tweaks.Add(newTweak);
+
         }
 
         // NOTE: DO NOT change GetHashCode function because the lists selection logic is based on that.

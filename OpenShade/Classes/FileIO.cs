@@ -111,14 +111,34 @@ namespace OpenShade.Classes
 
         public void LoadTweaks(List<Tweak> tweaks, IniFile pref, bool monitorChanges)
         {
-            foreach (var tweak in tweaks) {
+            foreach (var tweak in tweaks)
+            {
                 bool wasEnabled = tweak.isEnabled;
-                if (!pref.KeyExists("IsActive", tweak.key))
+
+                // BEGIN CUSTOM -----
+                if (tweak.key == "HDR & POST-PROCESSING_POSTPROCESS") // Special case for HDR on/off switch, since the implementation is a bit different from PTA preset files
+                {
+                    if (!pref.KeyExists("NoHDR", tweak.key))
+                    {
+                        mainWindowHandle.Log(ErrorType.Warning, "Missing entry 'NoHDR' for tweak [" + tweak.key + "]");
+                        break;
+                    }
+                    else
+                    {
+                        tweak.isEnabled = pref.Read("NoHDR", tweak.key) == "1" ? true : false;
+                    }
+                }
+                // END CUSTOM ----
+
+                else if (!pref.KeyExists("IsActive", tweak.key))
                 {
                     mainWindowHandle.Log(ErrorType.Warning, "Missing entry 'IsActive' for tweak [" + tweak.key + "]");
                     break;
                 }
-                tweak.isEnabled = pref.Read("IsActive", tweak.key) == "1" ? true : false;                
+                else
+                {
+                    tweak.isEnabled = pref.Read("IsActive", tweak.key) == "1" ? true : false;
+                }     
 
                 if (!monitorChanges)
                 {
@@ -260,6 +280,11 @@ namespace OpenShade.Classes
 
             foreach (var tweak in tweaks) {
                 preset.Write("IsActive", tweak.isEnabled ? "1" : "0", tweak.key);
+
+                if (tweak.key == "HDR & POST-PROCESSING_POSTPROCESS") // Special case for HDR on/off switch, since the implementation is a bit different from PTA preset files
+                {
+                    preset.Write("NoHDR", tweak.isEnabled ? "1" : "0", tweak.key);
+                }
 
                 foreach (var param in tweak.parameters)
                 {
