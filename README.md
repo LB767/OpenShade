@@ -19,8 +19,7 @@ The official PTA for v4 app can be found over at [SimTweaks](https://simtweaks.c
 Yes. The file format is the same, for now. But bear in mind that not all tweaks may work correctly since OpenShade is based on an older version of PTA.
 
 As an example, using the [THOPAT 2.1 preset](https://www.sass-projects.info/thopat/) the following tweaks are not supported:    
-  → Cloud shadow depth  
-  → HDR off with post-processing on (not used by the preset)  
+  → Cloud shadow depth   
   → FXAA tweaks (not used by the preset, FXAA is one of the worst AA method available. SMAA might be added in the future)  
   → Older DPX post-process (not used by the preset)  
   → Any .cfg tweak
