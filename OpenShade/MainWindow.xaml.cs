@@ -44,6 +44,8 @@ namespace OpenShade
         const string P3DRegistryPath = "HKEY_LOCAL_MACHINE\\SOFTWARE\\Lockheed Martin\\Prepar3D v4";
         string cacheDirectory = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\Lockheed Martin\\Prepar3D v4\\Shaders\\";
         string currentDirectory = Directory.GetCurrentDirectory();
+        string P3DDirectory;
+        public string P3DVersion;
 
         FileIO fileData;
         string shaderDirectory;
@@ -100,7 +102,7 @@ namespace OpenShade
 
 
             // Shaders files
-            string P3DDirectory = (string)Registry.GetValue(@"HKEY_CURRENT_USER\Software\Lockheed Martin\Prepar3D v4", "AppPath", null);
+            P3DDirectory = (string)Registry.GetValue(@"HKEY_CURRENT_USER\Software\Lockheed Martin\Prepar3D v4", "AppPath", null);
             if (P3DDirectory == null)
             {
                 Log(ErrorType.Error, "Prepar3D v4 path not found");
@@ -131,7 +133,7 @@ namespace OpenShade
             }
             ShaderCache_TextBox.Text = cacheDirectory;
 
-            backupDirectory = currentDirectory + "\\Backup Shaders\\"; // Default directory
+            backupDirectory = currentDirectory + "\\Backup Shaders\\"; // Default directory           
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -182,10 +184,32 @@ namespace OpenShade
             Theme_ComboBox.ItemsSource = Enum.GetValues(typeof(Themes)).Cast<Themes>();
             Theme_ComboBox.SelectedItem = ((App)Application.Current).CurrentTheme;
             
-            ShaderBackup_TextBox.Text = backupDirectory;
+            // Load Backup files
+            ShaderBackup_TextBox.Text = backupDirectory;            
 
             if (Directory.Exists(backupDirectory))
             {
+                string currentP3DVersion = FileVersionInfo.GetVersionInfo(P3DDirectory + "Prepar3D.exe").FileVersion;
+
+                if (P3DVersion != currentP3DVersion)
+                {
+                    MessageBoxResult result = MessageBox.Show("OpenShade has detected a new version of Prepar3D (" + currentP3DVersion + ").\r\n\r\nIt is STRONGLY recommended that you backup the default shader files again otherwise they will be overwritten by old shader files when applying a preset.", "New version detected", MessageBoxButton.OKCancel, MessageBoxImage.Exclamation, MessageBoxResult.OK); // TODO: Localization
+                    if (result == MessageBoxResult.OK)
+                    {
+                        if (fileData.CopyShaderFiles(shaderDirectory, backupDirectory))
+                        {
+                            P3DVersion = currentP3DVersion;
+                            Log(ErrorType.None, "Shaders backed up");
+                        }
+                        else
+                        {
+                            Log(ErrorType.Warning, "Shaders could not be backed up. OpenShade can not run.");
+                            ChangeMenuBarState(false);
+                        }
+                    }                    
+                }
+
+
                 if (fileData.CheckShaderBackup(backupDirectory))
                 {
                     fileData.LoadShaderFiles(backupDirectory);

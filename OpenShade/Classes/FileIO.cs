@@ -384,7 +384,11 @@ namespace OpenShade.Classes
 
                         case "Loaded_Preset":
                             mainWindowHandle.loadedPresetPath = parts[1].Trim();
-                        break;
+                            break;
+
+                        case "P3D_Version":
+                            mainWindowHandle.P3DVersion = parts[1].Trim();
+                            break;
 
                         case "Theme":
                             Themes current;
@@ -431,6 +435,7 @@ namespace OpenShade.Classes
             if (mainWindowHandle.activePresetPath != null && File.Exists(mainWindowHandle.activePresetPath)) { lines.Add("Active_Preset, " + mainWindowHandle.activePresetPath); }
             if (mainWindowHandle.loadedPresetPath != null && File.Exists(mainWindowHandle.loadedPresetPath)) { lines.Add("Loaded_Preset, " + mainWindowHandle.loadedPresetPath); }
 
+            lines.Add("P3D_Version, " + mainWindowHandle.P3DVersion);
             lines.Add("Theme, " + ((App)Application.Current).CurrentTheme.ToString());
             lines.Add("Backup_Directory, " + mainWindowHandle.backupDirectory);
             lines.Add("Main_Width, " + mainWindowHandle.Width.ToString());
