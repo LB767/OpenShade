@@ -1079,6 +1079,25 @@ namespace OpenShade
                         // NOTE: Object lighting and Aircraft lighting and saturation interract quite heavily with each other
                         // Making something clearer might be a decent idea to avoid headaches...
                         case "Objects lighting":
+                            currentFile = FileIO.funclibFile;
+
+                            funclibText = funclibText.AddBefore(ref success, "void DirectionalLighting",
+                                $@"void DirectionalLightingTweak(const float3 vNormalWS, const float shadowContrib, float tweak1, float tweak2, float tweak3, float tweak4,
+    out float3 diffuseAndAmbient)
+{{
+#if defined(SHD_VERTICAL_NORMAL)
+    const float fDotSun = max(cb_mSun.mDirection.y, 0);
+    const float fDotMoon = max(cb_mMoon.mDirection.y, 0);
+#else
+    const float fDotSun = saturate(dot(vNormalWS, normalize(cb_mSun.mDirection)));
+    const float fDotMoon = saturate(dot(vNormalWS, normalize(cb_mMoon.mDirection)));
+#endif
+
+    diffuseAndAmbient = saturate((cb_mSun.mAmbient.xyz * tweak1 + (shadowContrib * (cb_mSun.mDiffuse.xyz  * tweak2 * fDotSun))) +
+                        (cb_mMoon.mAmbient.xyz * tweak3 + (shadowContrib * (cb_mMoon.mDiffuse.xyz * tweak4  * fDotMoon))));
+}}
+");
+
                             currentFile = FileIO.generalFile;
 
                             string aircraftLighting = "";
@@ -1086,29 +1105,48 @@ namespace OpenShade
                             if (aircraft.isEnabled)
                             {
                                 aircraftLighting = "&&& ADD THE AIRCRAFT LIGHTING TWEAK HERE &&&";
-                            }                  
-                           
-                            generalText = generalText.ReplaceAll(ref success, @"cDiffuse = cBase * (float4( saturate( 
-                (cb_mSun.mAmbient.xyz + (shadowContrib * (sunDiffuse * fDotSun))) + 
-                (cb_mMoon.mAmbient.xyz + (shadowContrib * (moonDiffuse * fDotMoon)))), 1) + cDiffuse);",
+                            }
 
-         $@"if (cb_mObjectType != 19) cDiffuse = cBase * (float4( saturate((cb_mSun.mAmbient.xyz * {tweak.parameters[0].value} + (shadowContrib * (sunDiffuse * {tweak.parameters[1].value} * fDotSun))) + 
-			  (cb_mMoon.mAmbient.xyz * {tweak.parameters[2].value} + (shadowContrib * (moonDiffuse * {tweak.parameters[3].value} * fDotMoon)))), 1) + cDiffuse);
-			{aircraftLighting}
-            else
-			  cDiffuse = cBase * (float4( saturate( (cb_mSun.mAmbient.xyz + (shadowContrib * (sunDiffuse * fDotSun))) + (cb_mMoon.mAmbient.xyz + (shadowContrib * (moonDiffuse * fDotMoon)))), 1) + cDiffuse);");
-                            
+                            generalText = generalText.ReplaceAll(ref success, "DirectionalLighting(vNormalWS, shadowContrib, directionalDiffuse);",
+                                $@"if (cb_mObjectType != 19) 
+                    DirectionalLightingTweak(vNormalWS, shadowContrib, {tweak.parameters[0].value}, {tweak.parameters[1].value}, {tweak.parameters[2].value}, {tweak.parameters[3].value}, directionalDiffuse);
+                {aircraftLighting}                
+                else
+                    DirectionalLighting(vNormalWS, shadowContrib, directionalDiffuse);
+"
+                            );
+           
                             break;
 
                         case "Aircraft lighting and saturation":
+                            if (funclibText.IndexOf("DirectionalLightingTweak") < 0) {
+                                currentFile = FileIO.funclibFile;
+
+                                funclibText = funclibText.AddBefore(ref success, "void DirectionalLighting",
+                                    $@"void DirectionalLightingTweak(const float3 vNormalWS, const float shadowContrib, float tweak1, float tweak2, float tweak3, float tweak4,
+    out float3 diffuseAndAmbient)
+{{
+#if defined(SHD_VERTICAL_NORMAL)
+    const float fDotSun = max(cb_mSun.mDirection.y, 0);
+    const float fDotMoon = max(cb_mMoon.mDirection.y, 0);
+#else
+    const float fDotSun = saturate(dot(vNormalWS, normalize(cb_mSun.mDirection)));
+    const float fDotMoon = saturate(dot(vNormalWS, normalize(cb_mMoon.mDirection)));
+#endif
+
+    diffuseAndAmbient = saturate((cb_mSun.mAmbient.xyz * tweak1 + (shadowContrib * (cb_mSun.mDiffuse.xyz  * tweak2 * fDotSun))) +
+                        (cb_mMoon.mAmbient.xyz * tweak3 + (shadowContrib * (cb_mMoon.mDiffuse.xyz * tweak4  * fDotMoon))));
+}}
+");
+                            }
+
+
                             currentFile = FileIO.generalFile;
 
-                            string replaceText = @"cDiffuse = cBase * (float4( saturate( 
-                (cb_mSun.mAmbient.xyz + (shadowContrib * (sunDiffuse * fDotSun))) + 
-                (cb_mMoon.mAmbient.xyz + (shadowContrib * (moonDiffuse * fDotMoon)))), 1) + cDiffuse);";
+                            string replaceText = "DirectionalLighting(vNormalWS, shadowContrib, directionalDiffuse);";
                             string elseText = "";
                             string finalText = @"else
-			  cDiffuse = cBase * (float4( saturate( (cb_mSun.mAmbient.xyz + (shadowContrib * (sunDiffuse * fDotSun))) + (cb_mMoon.mAmbient.xyz + (shadowContrib * (moonDiffuse * fDotMoon)))), 1) + cDiffuse);";
+			  DirectionalLighting(vNormalWS, shadowContrib, directionalDiffuse);";
 
                             if (generalText.IndexOf("&&& ADD THE AIRCRAFT LIGHTING TWEAK HERE &&&") >= 0)
                             {
@@ -1122,20 +1160,20 @@ namespace OpenShade
                                 generalText = generalText.ReplaceAll(ref success, replaceText,
 
          $@"#if !defined(PS_NEEDS_TANSPACE)
-			{elseText}if (cb_mObjectType == 19) cDiffuse = cBase * (float4( saturate((cb_mSun.mAmbient.xyz * {tweak.parameters[0].value} + (shadowContrib * (sunDiffuse * {tweak.parameters[1].value} * fDotSun))) + 
-			  (cb_mMoon.mAmbient.xyz * {tweak.parameters[2].value} + (shadowContrib * (moonDiffuse * {tweak.parameters[3].value} * fDotMoon)))), 1) + cDiffuse);
-			#else
-			{elseText}if (cb_mObjectType == 19)
-			  cDiffuse = cBase * (float4( saturate( (cb_mSun.mAmbient.xyz + (shadowContrib * (sunDiffuse * fDotSun))) + (cb_mMoon.mAmbient.xyz + (shadowContrib * (moonDiffuse * fDotMoon)))), 1) + cDiffuse);
-			#endif
+			    {elseText}if (cb_mObjectType == 19) 
+                    DirectionalLightingTweak(vNormalWS, shadowContrib, {tweak.parameters[0].value}, {tweak.parameters[1].value}, {tweak.parameters[2].value}, {tweak.parameters[3].value}, directionalDiffuse);              
+			    #else
+			    {elseText}if (cb_mObjectType == 19)
+			      DirectionalLighting(vNormalWS, shadowContrib, directionalDiffuse);
+			    #endif
 			{finalText}");
                             }
                             else
                             {
                                 generalText = generalText.ReplaceAll(ref success, replaceText,
 
-         $@"{elseText}if (cb_mObjectType == 19) cDiffuse = cBase * (float4( saturate((cb_mSun.mAmbient.xyz * {tweak.parameters[0].value} + (shadowContrib * (sunDiffuse * {tweak.parameters[1].value} * fDotSun))) + 
-			  (cb_mMoon.mAmbient.xyz * {tweak.parameters[2].value} + (shadowContrib * (moonDiffuse * {tweak.parameters[3].value} * fDotMoon)))), 1) + cDiffuse);
+         $@"{elseText}if (cb_mObjectType == 19)
+                DirectionalLightingTweak(vNormalWS, shadowContrib, {tweak.parameters[0].value}, {tweak.parameters[1].value}, {tweak.parameters[2].value}, {tweak.parameters[3].value}, directionalDiffuse);
 			{finalText}");
                             }
 
@@ -1392,7 +1430,7 @@ namespace OpenShade
             if (postProcesses.Any(p => p.isEnabled == true))
             { // if at least one effect is applied
                 bool success = false;
-                HDRText = HDRText.ReplaceAll(ref success, "return float4(finalColor, 1.0f);", "float4 EndColor = float4(finalColor.rgb, 1);\r\nreturn EndColor;");
+                HDRText = HDRText.ReplaceAll(ref success, "return float4(finalColor, alpha);", "float4 EndColor = float4(finalColor, alpha);\r\nreturn EndColor;");
 
                 if (!success)
                 {
@@ -2099,6 +2137,8 @@ return colorInput;
             ApplyPreset_btn.IsEnabled = enable;
             ResetShaderFiles_btn.IsEnabled = enable;
             ClearShaders_btn.IsEnabled = enable;
+            ResetToDefaults_btn.IsEnabled = enable;
+            ResetToPreset_btn.IsEnabled = enable;
         }
 
         public void Log(ErrorType type, string message)
