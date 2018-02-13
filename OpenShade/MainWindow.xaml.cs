@@ -1030,10 +1030,13 @@ namespace OpenShade
                         case "'No popcorn' clouds":
                             currentFile = FileIO.cloudFile; // I really don't like this
                             cloudText = cloudText.AddAfter(ref success, "void GetPointDiffuse( out float4 diffuse, in float3 corner, in float3 groupCenter", ", in float cloudDistance");
-                            cloudText = cloudText.AddAfter(ref success, "float  fIntensity = -1.0f * max(dot(lightDirection, cloudGroupNormal), dot(lightDirection, facingDirection));", "\r\nconst float fExp = saturate(exp(-cloudDistance * cloudDistance * " + tweak.parameters[0].value.ToString() + "));\r\nfIntensity = lerp(0.35f, fIntensity, fExp);");
+                            cloudText = cloudText.AddAfter(ref success, "float  fIntensity = -1.0f * max(dot(lightDirection, cloudGroupNormal), dot(lightDirection, facingDirection));", $@"
+const float fExp = saturate(exp(-cloudDistance * cloudDistance * {tweak.parameters[0].value} ));
+fIntensity = lerp(0.36f, fIntensity, fExp);");
+                            
                             cloudText = cloudText.AddAfter(ref success, "diffuse = saturate(float4(.85f * colorIntensity.rgb + (0.33f * saturate(colorIntensity.rgb - 1)), colorIntensity.a));", "\r\nif (diffuse.a > " + tweak.parameters[1].value.ToString() + ") { diffuse.a = lerp(" + tweak.parameters[1].value.ToString() + ", diffuse.a, fExp); }");
-                            cloudText = cloudText.AddAfter(ref success, "GetPointDiffuse(Out.diffuse[i], position, spriteCenter.xyz", ", length(positionVector)");
-                            cloudText = cloudText.AddAfter(ref success, "GetPointDiffuse( Out.diffuse[i], position, spriteCenter.xyz", ", length(positionVector)");
+                            cloudText = cloudText.AddAfter(ref success, "GetPointDiffuse(Out.diffuse[i], position, spriteCenter.xyz", ", cloudDistance");
+                            cloudText = cloudText.AddAfter(ref success, "GetPointDiffuse( Out.diffuse[i], position, spriteCenter.xyz", ", cloudDistance");
                             break;
 
                         case "Alternate lighting for cloud groups":
@@ -1050,7 +1053,9 @@ namespace OpenShade
                         case "Cloud light scattering":
                             currentFile = FileIO.cloudFile;
                             cloudText = cloudText.CommentOut(ref success, "if (fIntensity < -cb_mMedianLine)", "    fIntensity = clamp(fIntensity, 0, 1);", false);
-                            cloudText = cloudText.AddBefore(ref success, "/*if (fIntensity < -cb_mMedianLine)", "fIntensity =  saturate(" + tweak.parameters[0].value.ToString() + " * fIntensity + " + tweak.parameters[1].value.ToString() + ");\r\n");
+                            cloudText = cloudText.AddBefore(ref success, "/*if (fIntensity < -cb_mMedianLine)", $@"const float fScatter = {tweak.parameters[0].value} + cb_mDayNightInterpolant + (cb_fPrecipitationLevel*0.1);
+fIntensity =  saturate(fScatter * fIntensity + {tweak.parameters[1].value});
+");
 
                             if (tweak.parameters[2].value == "1")
                             {
@@ -1260,7 +1265,16 @@ namespace OpenShade
                                 rayleighString = "&&& ADD THE RAYLEIGH TWEAK HERE &&&";
                             }
 
-                            funclibText = funclibText.AddBefore(ref success, "return lerp(cFog, cColor, saturate(exp(-fDistance*fDistance*fFogDensitySquared)));", "#if !defined(SHD_VOLUMETRIC_FOG)\r\n float3 FinalColor = cColor;\r\n  if ((cb_mObjectType != (uint)1) && (cb_mObjectType != (uint)3) && (cb_mObjectType != (uint)21) && (cb_mObjectType != (uint)19))\r\n   {\r\n   FinalColor.rgb = lerp(pow(saturate(cb_mFogColor.rgb * float3(" + tweak.parameters[3].value.ToString() + ")), (1 + saturate(cb_mSun.mDiffuse.g - 0.35f)) * " + tweak.parameters[0].value.ToString() + "), FinalColor.rgb, saturate(exp(-fDistance * fDistance * " + tweak.parameters[1].value.ToString() + ")));\r\n  }\r\n" + rayleighString + "  return lerp(cFog, FinalColor, saturate(exp(-fDistance * fDistance * fFogDensitySquared)));\r\n #endif\r\n");
+                            funclibText = funclibText.AddBefore(ref success, "return lerp(cFog, cColor, saturate(exp(-fDistance*fDistance*fFogDensitySquared)));",
+$@"#if !defined(SHD_VOLUMETRIC_FOG)
+float3 FinalColor = cColor;
+if ((cb_mObjectType != (uint)1) && (cb_mObjectType != (uint)3) && (cb_mObjectType != (uint)21) && (cb_mObjectType != (uint)19))
+{{
+    FinalColor.rgb = lerp(pow(saturate(cb_mFogColor.rgb * float3({tweak.parameters[3].value})), (1 + saturate(cb_mSun.mDiffuse.g - 0.35f)) * {tweak.parameters[0].value}), FinalColor.rgb, saturate(exp(-fDistance * fDistance * {tweak.parameters[1].value})));
+}}
+{rayleighString} return lerp(cFog, FinalColor, saturate(exp(-fDistance * fDistance * fFogDensitySquared)));
+#endif
+");
                             funclibText = funclibText.AddAfter(ref success, "float horizonFogDensity = fFogDensity;", "\r\n#if !defined(SHD_ADDITIVE) && !defined(SHD_MULTIPLICATIVE)\r\n if ((cb_mObjectType != (uint)1) && (cb_mObjectType != (uint)3) && (cb_mObjectType != (uint)21) && (cb_mObjectType != (uint)19))\r\n  {\r\n  FinalColor.rgb = lerp(pow(saturate(cb_mFogColor.rgb * float3(" + tweak.parameters[3].value.ToString() + ")), (1 + saturate(cb_mSun.mDiffuse.g - 0.35f)) * " + tweak.parameters[0].value.ToString() + "), FinalColor.rgb, saturate(exp(-distQuared * " + tweak.parameters[1].value.ToString() + ")));\r\n }\r\n #endif");
 
                             if (tweak.parameters[2].value == "1")
@@ -1304,7 +1318,7 @@ namespace OpenShade
              const float  fFogDensitySquared,
              const float3 cFog)
 {", "\r\nfloat fDens = fFogDensitySquared;\r\n    if (cb_mObjectType == (uint)1) fDens *= " + tweak.parameters[0].value.ToString() + "; ");
-                            funclibText = funclibText.ReplaceAll(ref success, "return lerp(cFog, cColor, saturate(exp(-fDistance*fDistance*fFogDensitySquared)));", "return lerp(cFog, cColor, saturate(exp(-fDistance*fDistance*fDens)));");
+                            funclibText = funclibText.ReplaceAll(ref success, "return lerp(cFog, cColor, exp(-fDistance*fDistance*fFogDensitySquared));", "return lerp(cFog, cColor, saturate(exp(-fDistance*fDistance*fDens)));"); // saturate or not saturate? (saturate was removed from 4.1 to 4.2 in the default shader)
                             break;
 
                         case "Sky saturation":
@@ -1365,7 +1379,7 @@ namespace OpenShade
 
                         case "Scene tone adjustment":
                             currentFile = FileIO.HDRFile;
-                            HDRText = HDRText.AddBefore(ref success, "return float4(finalColor, 1.0f);", $"finalColor.rgb = saturate(finalColor.rgb * float3({tweak.parameters[0].value}))\r\n;");
+                            HDRText = HDRText.AddBefore(ref success, "return float4(finalColor, alpha);", $"finalColor.rgb = saturate(finalColor.rgb * float3({tweak.parameters[0].value}))\r\n;");
                             break;
 
                         case "Turn off HDR luminance adaptation effect":
@@ -1375,8 +1389,9 @@ namespace OpenShade
 
                         case "Disable HDR with post-processes":
                             currentFile = FileIO.HDRFile;
-                            HDRText = HDRText.CommentOut(ref success, "//Calculate the bloom.", "float3 finalColor = lerp(luminance, color, SaturationScalar);", true);
-                            HDRText = HDRText.ReplaceSecond(ref success, "float3 color = srcTex.Sample(samClamp, vert.texcoord).rgb;", "float3 finalColor = srcTex.Sample(samClamp, vert.texcoord).rgb;");
+                            HDRText = HDRText.CommentOut(ref success, "//Calculate the bloom.", "float3 finalColor = lerp(luminance, color.rgb, SaturationScalar);", true);
+                            HDRText = HDRText.ReplaceSecond(ref success, "float4 color = srcTex.Sample(samClamp, vert.texcoord);", "float4 finalColor = srcTex.Sample(samClamp, vert.texcoord);");
+                            HDRText = HDRText.ReplaceAll(ref success, "float alpha = color.a;", "float alpha = finalColor.a;");
                             break;
 
                             #endregion
