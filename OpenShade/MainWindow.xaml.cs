@@ -1089,12 +1089,12 @@ fIntensity =  saturate(fScatter * fIntensity + {tweak.parameters[1].value});
 
                         case "Reduce cloud brightness at dawn/dusk/night":
                             currentFile = FileIO.cloudFile;
-                            cloudText = cloudText.AddAfter(ref success, "float3 fColor = fIntensity * cb_mCloudDirectional.rgb + cb_mCloudAmbient.rgb;", "\r\n    float kk = 1 + saturate(fColor.g/(cb_mFogColor.g + 0.00001) - 2);\r\n    fColor /= kk;\r\n");
+                            cloudText = cloudText.AddAfter(ref success, "float3 fColor = fIntensity * cb_mCloudDirectional.rgb + cb_mCloudAmbient.rgb;", "\r\n    float fCumulusDusk = 1 + saturate(fColor.g/(cb_mFogColor.g + 0.00001) - 2);\r\n    fColor /= fCumulusDusk;\r\n");
                             break;
 
                         case "Reduce top layer cloud brightness at dawn/dusk/night":
                             currentFile = FileIO.generalFile;
-                            generalText = generalText.AddAfter(ref success, "#endif //SHD_ALPHA_TEST", "\r\nif (cb_mObjectType == (uint)3)\r\n {\r\n      float kk = 1 + saturate(cColor.g / (cb_mFogColor.g + 0.00001) - 2);\r\n     cColor.rgb /= kk;\r\n  }\r\n", 2);
+                            generalText = generalText.AddAfter(ref success, "#endif //SHD_ALPHA_TEST", "\r\nif (cb_mObjectType == (uint)3)\r\n {\r\n      float fCirrusDusk = 1 + saturate(cColor.g / (cb_mFogColor.g + 0.00001) - 2);\r\n     cColor.rgb /= fCirrusDusk;\r\n  }\r\n", 2);
                             break;
 
                         case "Cloud puffs width and height scaling":
