@@ -152,7 +152,7 @@ namespace OpenShade
                     try
                     {
                         loadedPreset = new IniFile(loadedPresetPath);
-                        LoadedPreset_Label.Content = loadedPreset.filename;
+                        LoadedPreset_TextBlock.Text = loadedPreset.filename;
                         LoadPreset(loadedPreset, false);
                         Log(ErrorType.None, "Preset [" + loadedPreset.filename + "] loaded");
                     }
@@ -172,7 +172,7 @@ namespace OpenShade
                 if (File.Exists(activePresetPath))
                 {                   
                     activePreset = new IniFile(activePresetPath);
-                    ActivePreset_Label.Content = activePreset.filename;                    
+                    ActivePreset_TextBlock.Text = activePreset.filename;                    
                 }
                 else
                 {
@@ -866,7 +866,7 @@ namespace OpenShade
             }
 
             loadedPreset = new IniFile(loadedPresetPath);
-            LoadedPreset_Label.Content = loadedPreset.filename;
+            LoadedPreset_TextBlock.Text = loadedPreset.filename;
 
             Log(ErrorType.None, "New Preset [" + loadedPreset.filename + "] created");
         }
@@ -895,7 +895,7 @@ namespace OpenShade
                 {
                     loadedPresetPath = dlg.FileName;
                     loadedPreset = new IniFile(loadedPresetPath);
-                    LoadedPreset_Label.Content = loadedPreset.filename;
+                    LoadedPreset_TextBlock.Text = loadedPreset.filename;
                     LoadPreset(loadedPreset, true);
                     Log(ErrorType.None, "Preset [" + loadedPreset.filename + "] loaded");
                 }
@@ -906,7 +906,7 @@ namespace OpenShade
                     // Revert to previous preset
                     loadedPresetPath = backupPresetPath;
                     loadedPreset = new IniFile(backupPresetPath);
-                    LoadedPreset_Label.Content = loadedPreset.filename;
+                    LoadedPreset_TextBlock.Text = loadedPreset.filename;
                     LoadPreset(loadedPreset, true);                    
                 }    
             }
@@ -947,7 +947,7 @@ namespace OpenShade
                     }
 
                     loadedPreset = new IniFile(loadedPresetPath);
-                    LoadedPreset_Label.Content = loadedPreset.filename;
+                    LoadedPreset_TextBlock.Text = loadedPreset.filename;
                 }
 
                 comment = PresetComments_TextBox.Text;
@@ -992,7 +992,7 @@ namespace OpenShade
 
                     loadedPresetPath = newPresetPath;
                     loadedPreset = newPreset;
-                    LoadedPreset_Label.Content = loadedPreset.filename;
+                    LoadedPreset_TextBlock.Text = loadedPreset.filename;
                     Log(ErrorType.None, "Preset [" + loadedPreset.filename + "] saved in " + loadedPreset.filepath);
                 }
                 catch (Exception ex)
@@ -1108,47 +1108,7 @@ fIntensity =  saturate(fScatter * fIntensity + {tweak.parameters[1].value});
                         // NOTE: Object lighting and Aircraft lighting and saturation interract quite heavily with each other
                         // Making something clearer might be a decent idea to avoid headaches...
                         case "Objects lighting":
-                            currentFile = FileIO.funclibFile;
-
-                            funclibText = funclibText.AddBefore(ref success, "void DirectionalLighting",
-                                $@"void DirectionalLightingTweak(const float3 vNormalWS, const float shadowContrib, float tweak1, float tweak2, float tweak3, float tweak4,
-    out float3 diffuseAndAmbient)
-{{
-#if defined(SHD_VERTICAL_NORMAL)
-    const float fDotSun = max(cb_mSun.mDirection.y, 0);
-    const float fDotMoon = max(cb_mMoon.mDirection.y, 0);
-#else
-    const float fDotSun = saturate(dot(vNormalWS, normalize(cb_mSun.mDirection)));
-    const float fDotMoon = saturate(dot(vNormalWS, normalize(cb_mMoon.mDirection)));
-#endif
-
-    diffuseAndAmbient = saturate((cb_mSun.mAmbient.xyz * tweak1 + (shadowContrib * (cb_mSun.mDiffuse.xyz  * tweak2 * fDotSun))) +
-                        (cb_mMoon.mAmbient.xyz * tweak3 + (shadowContrib * (cb_mMoon.mDiffuse.xyz * tweak4  * fDotMoon))));
-}}
-");
-
-                            currentFile = FileIO.generalFile;
-
-                            string aircraftLighting = "";
-                            Tweak aircraft = tweaks.First(p => p.name == "Aircraft lighting and saturation");
-                            if (aircraft.isEnabled)
                             {
-                                aircraftLighting = "&&& ADD THE AIRCRAFT LIGHTING TWEAK HERE &&&";
-                            }
-
-                            generalText = generalText.ReplaceAll(ref success, "DirectionalLighting(vNormalWS, shadowContrib, directionalDiffuse);",
-                                $@"if (cb_mObjectType != 19) 
-                    DirectionalLightingTweak(vNormalWS, shadowContrib, {tweak.parameters[0].value}, {tweak.parameters[1].value}, {tweak.parameters[2].value}, {tweak.parameters[3].value}, directionalDiffuse);
-                {aircraftLighting}                
-                else
-                    DirectionalLighting(vNormalWS, shadowContrib, directionalDiffuse);
-"
-                            );
-           
-                            break;
-
-                        case "Aircraft lighting and saturation":
-                            if (funclibText.IndexOf("DirectionalLightingTweak") < 0) {
                                 currentFile = FileIO.funclibFile;
 
                                 funclibText = funclibText.AddBefore(ref success, "void DirectionalLighting",
@@ -1167,48 +1127,151 @@ fIntensity =  saturate(fScatter * fIntensity + {tweak.parameters[1].value});
                         (cb_mMoon.mAmbient.xyz * tweak3 + (shadowContrib * (cb_mMoon.mDiffuse.xyz * tweak4  * fDotMoon))));
 }}
 ");
+
+                                currentFile = FileIO.generalFile;
+
+                                string aircraftLighting = "";
+                                Tweak aircraft = tweaks.First(p => p.name == "Aircraft lighting and saturation");
+                                if (aircraft.isEnabled)
+                                {
+                                    aircraftLighting = "&&& ADD THE AIRCRAFT LIGHTING TWEAK HERE &&&";
+                                }
+
+                                generalText = generalText.ReplaceAll(ref success, "DirectionalLighting(vNormalWS, shadowContrib, directionalDiffuse);",
+                                    $@"if (cb_mObjectType != 19) 
+                    DirectionalLightingTweak(vNormalWS, shadowContrib, {tweak.parameters[0].value}, {tweak.parameters[1].value}, {tweak.parameters[2].value}, {tweak.parameters[3].value}, directionalDiffuse);
+                {aircraftLighting}                
+                else
+                    DirectionalLighting(vNormalWS, shadowContrib, directionalDiffuse);
+"
+                                );
+
+                                break;
                             }
 
+                        case "Aircraft lighting and saturation":
+                            {
+                                // Check if the tweaked function already exists (comes from objects lighting)
+                                if (funclibText.IndexOf("DirectionalLightingTweak") < 0)
+                                {
+                                    currentFile = FileIO.funclibFile;
 
-                            currentFile = FileIO.generalFile;
+                                    funclibText = funclibText.AddBefore(ref success, "void DirectionalLighting",
+                                        $@"void DirectionalLightingTweak(const float3 vNormalWS, const float shadowContrib, float tweak1, float tweak2, float tweak3, float tweak4,
+    out float3 diffuseAndAmbient)
+{{
+#if defined(SHD_VERTICAL_NORMAL)
+    const float fDotSun = max(cb_mSun.mDirection.y, 0);
+    const float fDotMoon = max(cb_mMoon.mDirection.y, 0);
+#else
+    const float fDotSun = saturate(dot(vNormalWS, normalize(cb_mSun.mDirection)));
+    const float fDotMoon = saturate(dot(vNormalWS, normalize(cb_mMoon.mDirection)));
+#endif
 
-                            string replaceText = "DirectionalLighting(vNormalWS, shadowContrib, directionalDiffuse);";
-                            string elseText = "";
-                            string finalText = @"else
+    diffuseAndAmbient = saturate((cb_mSun.mAmbient.xyz * tweak1 + (shadowContrib * (cb_mSun.mDiffuse.xyz  * tweak2 * fDotSun))) +
+                        (cb_mMoon.mAmbient.xyz * tweak3 + (shadowContrib * (cb_mMoon.mDiffuse.xyz * tweak4  * fDotMoon))));
+}}
+");
+                                }
+
+
+                                currentFile = FileIO.generalFile;
+
+                                string replaceText = "DirectionalLighting(vNormalWS, shadowContrib, directionalDiffuse);";
+                                string elseText = "";
+                                string finalText = @"else
 			  DirectionalLighting(vNormalWS, shadowContrib, directionalDiffuse);";
 
-                            if (generalText.IndexOf("&&& ADD THE AIRCRAFT LIGHTING TWEAK HERE &&&") >= 0)
-                            {
-                                replaceText = "&&& ADD THE AIRCRAFT LIGHTING TWEAK HERE &&&";
-                                elseText = "else ";
-                                finalText = "";
-                            }                            
+                                if (generalText.IndexOf("&&& ADD THE AIRCRAFT LIGHTING TWEAK HERE &&&") >= 0)
+                                {
+                                    replaceText = "&&& ADD THE AIRCRAFT LIGHTING TWEAK HERE &&&";
+                                    elseText = "else ";
+                                    finalText = "";
+                                }
 
-                            if (tweak.parameters[5].value == "1")
-                            {
+                                // 1st - VC/interior
+                                // 2nd - Aircraft
                                 generalText = generalText.ReplaceAll(ref success, replaceText,
 
-         $@"#if !defined(PS_NEEDS_TANSPACE)
+             $@"#if !defined(PS_NEEDS_TANSPACE)
 			    {elseText}if (cb_mObjectType == 19) 
-                    DirectionalLightingTweak(vNormalWS, shadowContrib, {tweak.parameters[0].value}, {tweak.parameters[1].value}, {tweak.parameters[2].value}, {tweak.parameters[3].value}, directionalDiffuse);              
+                    DirectionalLighting(vNormalWS, shadowContrib, directionalDiffuse);                       
+			    #else
+			    {elseText}if (cb_mObjectType == 19)
+			      DirectionalLightingTweak(vNormalWS, shadowContrib, {tweak.parameters[0].value}, {tweak.parameters[1].value}, {tweak.parameters[2].value}, {tweak.parameters[3].value}, directionalDiffuse);
+			    #endif
+			{finalText}");
+
+                                generalText = generalText.AddBefore(ref success, "// Apply IR if active", "if ((cb_mObjectType == (uint)0)  ||  (cb_mObjectType == (uint)19))\r\n    {\r\n   cColor.rgb = saturate(lerp(dot(cColor.rgb, float3(0.299f, 0.587f, 0.114f)), cColor.rgb, " + tweak.parameters[4].value.ToString() + "));\r\n    }\r\n");
+
+                                break;
+                            }
+
+                        case "Cockpit lighting and saturation":
+                            {
+
+                                // Check if the tweaked function already exists (comes from objects lighting or Aircraft lighting)
+                                if (funclibText.IndexOf("DirectionalLightingTweak") < 0)
+                                {
+                                    currentFile = FileIO.funclibFile;
+
+                                    funclibText = funclibText.AddBefore(ref success, "void DirectionalLighting",
+                                        $@"void DirectionalLightingTweak(const float3 vNormalWS, const float shadowContrib, float tweak1, float tweak2, float tweak3, float tweak4,
+    out float3 diffuseAndAmbient)
+{{
+#if defined(SHD_VERTICAL_NORMAL)
+    const float fDotSun = max(cb_mSun.mDirection.y, 0);
+    const float fDotMoon = max(cb_mMoon.mDirection.y, 0);
+#else
+    const float fDotSun = saturate(dot(vNormalWS, normalize(cb_mSun.mDirection)));
+    const float fDotMoon = saturate(dot(vNormalWS, normalize(cb_mMoon.mDirection)));
+#endif
+
+    diffuseAndAmbient = saturate((cb_mSun.mAmbient.xyz * tweak1 + (shadowContrib * (cb_mSun.mDiffuse.xyz  * tweak2 * fDotSun))) +
+                        (cb_mMoon.mAmbient.xyz * tweak3 + (shadowContrib * (cb_mMoon.mDiffuse.xyz * tweak4  * fDotMoon))));
+}}
+");
+                                }
+
+
+                                currentFile = FileIO.generalFile;
+
+                                string replaceText = "DirectionalLighting(vNormalWS, shadowContrib, directionalDiffuse);";
+                                string elseText = "";
+                                string finalText = @"else
+			  DirectionalLighting(vNormalWS, shadowContrib, directionalDiffuse);";
+
+                                if (generalText.IndexOf("&&& ADD THE AIRCRAFT LIGHTING TWEAK HERE &&&") >= 0)
+                                {
+                                    replaceText = "&&& ADD THE AIRCRAFT LIGHTING TWEAK HERE &&&";
+                                    elseText = "else ";
+                                    finalText = "";
+                                }
+
+                                Tweak aircraft = tweaks.First(p => p.name == "Aircraft lighting and saturation");
+                                if (aircraft.isEnabled) {
+                                    generalText = generalText.ReplaceFirst(ref success, replaceText, $"DirectionalLightingTweak(vNormalWS, shadowContrib, { tweak.parameters[0].value}, { tweak.parameters[1].value}, { tweak.parameters[2].value}, { tweak.parameters[3].value}, directionalDiffuse);");
+                                }
+                                else {
+                                    // 1st - VC/interior
+                                    // 2nd - Aircraft
+                                    generalText = generalText.ReplaceAll(ref success, replaceText,
+
+                 $@"#if !defined(PS_NEEDS_TANSPACE)
+			    {elseText}if (cb_mObjectType == 19) 
+                    DirectionalLightingTweak(vNormalWS, shadowContrib, {tweak.parameters[0].value}, {tweak.parameters[1].value}, {tweak.parameters[2].value}, {tweak.parameters[3].value}, directionalDiffuse);                   
 			    #else
 			    {elseText}if (cb_mObjectType == 19)
 			      DirectionalLighting(vNormalWS, shadowContrib, directionalDiffuse);
 			    #endif
 			{finalText}");
-                            }
-                            else
-                            {
-                                generalText = generalText.ReplaceAll(ref success, replaceText,
 
-         $@"{elseText}if (cb_mObjectType == 19)
-                DirectionalLightingTweak(vNormalWS, shadowContrib, {tweak.parameters[0].value}, {tweak.parameters[1].value}, {tweak.parameters[2].value}, {tweak.parameters[3].value}, directionalDiffuse);
-			{finalText}");
+                                    generalText = generalText.AddBefore(ref success, "// Apply IR if active", "if ((cb_mObjectType == (uint)0)  ||  (cb_mObjectType == (uint)19))\r\n    {\r\n   cColor.rgb = saturate(lerp(dot(cColor.rgb, float3(0.299f, 0.587f, 0.114f)), cColor.rgb, " + tweak.parameters[4].value.ToString() + "));\r\n    }\r\n");
+                                }
+
+                                break;
                             }
 
-                            generalText = generalText.AddBefore(ref success, "// Apply IR if active", "if ((cb_mObjectType == (uint)0)  ||  (cb_mObjectType == (uint)19))\r\n    {\r\n   cColor.rgb = saturate(lerp(dot(cColor.rgb, float3(0.299f, 0.587f, 0.114f)), cColor.rgb, " + tweak.parameters[4].value.ToString() + "));\r\n    }\r\n");
-
-                            break;                        
 
                         case "Autogen emissive lighting":
                             currentFile = FileIO.generalFile;
@@ -2044,7 +2107,7 @@ return colorInput;
             {
                 activePresetPath = loadedPresetPath;
                 activePreset = loadedPreset;
-                ActivePreset_Label.Content = activePreset.filename;
+                ActivePreset_TextBlock.Text = activePreset.filename;
 
                 Log(ErrorType.None, "Preset [" + activePreset.filename + "] applied. "
                     + tweakCount + "/" + tweaks.Count(p => p.isEnabled == true) + " tweaks applied. "
@@ -2054,7 +2117,7 @@ return colorInput;
             else {
                 activePresetPath = loadedPresetPath; // becomes null
                 activePreset = loadedPreset; // becomes null
-                ActivePreset_Label.Content = "";
+                ActivePreset_TextBlock.Text = "";
 
                 Log(ErrorType.None, "Tweaks applied. "
                     + tweakCount + "/" + tweaks.Count(p => p.isEnabled == true) + " tweaks applied. "
@@ -2082,7 +2145,7 @@ return colorInput;
             {
                 activePresetPath = null;
                 activePreset = null;
-                ActivePreset_Label.Content = "";
+                ActivePreset_TextBlock.Text = "";
 
                 Log(ErrorType.None, "Shader files restored");
 
@@ -2114,7 +2177,7 @@ return colorInput;
         {
             loadedPresetPath = activePresetPath;
             loadedPreset = activePreset;
-            LoadedPreset_Label.Content = loadedPreset.filename;
+            LoadedPreset_TextBlock.Text = loadedPreset.filename;
             LoadPreset(activePreset, false);
 
             List_SelectionChanged(Tweak_List, TweakStack, TweakClearStack, TweakTitleTextblock, TweakDescriptionTextblock);

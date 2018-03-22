@@ -279,7 +279,15 @@ namespace OpenShade.Classes
             newTweak.parameters.Add(new Parameter("MoonAmbientCoeff", "Ambient moonlight ratio", 1, 1, 0.1, 5, UIType.Text));
             newTweak.parameters.Add(new Parameter("MoonDiffuseCoeff", "Diffuse moonlight ratio", 1, 1, 0.1, 5, UIType.Text));
             newTweak.parameters.Add(new Parameter("SaturateRatio", "Saturation", 1, 1, 0, 2, UIType.Text));
-            newTweak.parameters.Add(new Parameter("VCOnly", "Adjust only internal/virtual cockpit view", 0, 0, 0, 1, UIType.Checkbox));
+            // newTweak.parameters.Add(new Parameter("VCOnly", "Adjust only internal/virtual cockpit view", 0, 0, 0, 1, UIType.Checkbox));
+            tweaks.Add(newTweak);
+
+            newTweak = new Tweak("LIGHTING_VC_LIGHTING", Category.Lighting, "Cockpit lighting and saturation", "");
+            newTweak.parameters.Add(new Parameter("SunAmbientCoeff", "Ambient sunlight ratio", 1, 1, 0.1, 5, UIType.Text));
+            newTweak.parameters.Add(new Parameter("SunDiffuseCoeff", "Diffuse sunlight ratio", 1, 1, 0.1, 5, UIType.Text));
+            newTweak.parameters.Add(new Parameter("MoonAmbientCoeff", "Ambient moonlight ratio", 1, 1, 0.1, 5, UIType.Text));
+            newTweak.parameters.Add(new Parameter("MoonDiffuseCoeff", "Diffuse moonlight ratio", 1, 1, 0.1, 5, UIType.Text));
+            newTweak.parameters.Add(new Parameter("SaturateRatio", "Saturation", 1, 1, 0, 2, UIType.Text));
             tweaks.Add(newTweak);
 
             newTweak = new Tweak("LIGHTING_AUTOGEN_EMISSIVE", Category.Lighting, "Autogen emissive lighting", "");

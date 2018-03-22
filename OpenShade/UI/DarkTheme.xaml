@@ -78,7 +78,7 @@
         <Setter Property="BorderThickness" Value="0.2"/>
         <Setter Property="BorderBrush" Value="{DynamicResource BorderColor1}"/>
     </Style>
-
+    
     <Style TargetType="TextBox">
         <Setter Property="Background" Value="{DynamicResource BackgroundColor1}" />
         <Setter Property="Foreground" Value="{DynamicResource TextColor}" />

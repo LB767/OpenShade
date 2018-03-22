@@ -142,10 +142,10 @@
             </StackPanel>
             
             <Label Grid.Column="1" Grid.Row="0" VerticalAlignment="Bottom" Content="Loaded Preset:"/>
-            <Label Grid.Column="2" Grid.Row="0" VerticalAlignment="Bottom" Content="" x:Name="LoadedPreset_Label" Width="Auto"/>
+            <TextBlock Grid.Column="2" Grid.Row="0" VerticalAlignment="Bottom" Text="" x:Name="LoadedPreset_TextBlock" Width="Auto" Foreground="{DynamicResource TextColor}"/>
 
             <Label Grid.Column="1" Grid.Row="1" VerticalAlignment="Bottom" Content="Active Preset:"/>
-            <Label Grid.Column="2" Grid.Row="1" VerticalAlignment="Bottom" Content="" x:Name="ActivePreset_Label" Width="Auto"/>
+            <TextBlock Grid.Column="2" Grid.Row="1" VerticalAlignment="Bottom" Text="" x:Name="ActivePreset_TextBlock" Width="Auto" Foreground="{DynamicResource TextColor}"/>
 
         </Grid>
 
