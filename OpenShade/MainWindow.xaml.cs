@@ -1202,7 +1202,15 @@ fIntensity =  saturate(fScatter * fIntensity + {tweak.parameters[1].value});
 			    #endif
 			{finalText}");
 
-                                generalText = generalText.AddBefore(ref success, "// Apply IR if active", "if ((cb_mObjectType == (uint)0)  ||  (cb_mObjectType == (uint)19))\r\n    {\r\n   cColor.rgb = saturate(lerp(dot(cColor.rgb, float3(0.299f, 0.587f, 0.114f)), cColor.rgb, " + tweak.parameters[4].value.ToString() + "));\r\n    }\r\n");
+                                generalText = generalText.AddBefore(ref success, "// Apply IR if active", $@"if ((cb_mObjectType == (uint)0)  ||  (cb_mObjectType == (uint)19))
+{{
+    #if defined(PS_NEEDS_TANSPACE)
+    cColor.rgb = saturate(lerp(dot(cColor.rgb, float3(0.299f, 0.587f, 0.114f)), cColor.rgb, {tweak.parameters[4].value}));
+    #else
+    cColor.rgb = saturate(lerp(dot(cColor.rgb, float3(0.299f, 0.587f, 0.114f)), cColor.rgb, 1));
+    #endif
+}}
+");
 
                                 break;
                             }
@@ -1251,6 +1259,8 @@ fIntensity =  saturate(fScatter * fIntensity + {tweak.parameters[1].value});
                                 Tweak aircraft = tweaks.First(p => p.name == "Aircraft lighting and saturation");
                                 if (aircraft.isEnabled) {
                                     generalText = generalText.ReplaceFirst(ref success, replaceText, $"DirectionalLightingTweak(vNormalWS, shadowContrib, { tweak.parameters[0].value}, { tweak.parameters[1].value}, { tweak.parameters[2].value}, { tweak.parameters[3].value}, directionalDiffuse);");
+
+                                    generalText = generalText.ReplaceFirst(ref success, "cColor.rgb = saturate(lerp(dot(cColor.rgb, float3(0.299f, 0.587f, 0.114f)), cColor.rgb, 1));", $"cColor.rgb = saturate(lerp(dot(cColor.rgb, float3(0.299f, 0.587f, 0.114f)), cColor.rgb, {tweak.parameters[4].value}));");
                                 }
                                 else {
                                     // 1st - VC/interior
@@ -1266,7 +1276,16 @@ fIntensity =  saturate(fScatter * fIntensity + {tweak.parameters[1].value});
 			    #endif
 			{finalText}");
 
-                                    generalText = generalText.AddBefore(ref success, "// Apply IR if active", "if ((cb_mObjectType == (uint)0)  ||  (cb_mObjectType == (uint)19))\r\n    {\r\n   cColor.rgb = saturate(lerp(dot(cColor.rgb, float3(0.299f, 0.587f, 0.114f)), cColor.rgb, " + tweak.parameters[4].value.ToString() + "));\r\n    }\r\n");
+                                    generalText = generalText.AddBefore(ref success, "// Apply IR if active", $@"if ((cb_mObjectType == (uint)0)  ||  (cb_mObjectType == (uint)19))
+{{
+    #if !defined(PS_NEEDS_TANSPACE)
+    cColor.rgb = saturate(lerp(dot(cColor.rgb, float3(0.299f, 0.587f, 0.114f)), cColor.rgb, {tweak.parameters[4].value}));
+    #else
+    cColor.rgb = saturate(lerp(dot(cColor.rgb, float3(0.299f, 0.587f, 0.114f)), cColor.rgb, 1));
+    #endif
+}}
+");
+
                                 }
 
                                 break;
